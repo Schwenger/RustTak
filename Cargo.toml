@@ -1,0 +1,8 @@
+[package]
+name = "rust_tak"
+version = "0.1.0"
+authors = ["Maximilian Schwenger <mail@mschwenger.de>"]
+edition = "2018"
+
+[dependencies]
+colored = "1.7.0"
