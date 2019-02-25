@@ -29,8 +29,7 @@ impl PiecesStash {
             5 => (21, 1),
             6 => (30, 1),
             8 => (50, 2),
-            _ => panic!("Board size {} is not supported.") // TODO: Make sure this does not happen.
-            // TODO: Maybe even translate sizes into enum with all required constants contained.
+            _ => panic!("Board size {} is not supported."),
         };
         PiecesStash { stones, caps }
     }
@@ -118,8 +117,6 @@ impl MoveLogic {
         Piece::new(kind, c)
     }
 
-    // TODO: Return error message.
-    // TODO: Make sure red does not move blk and vice versa.
     pub(crate) fn applicable(&self, mv: &Move) -> bool {
         match mv.action {
             Action::Place(pos, kind) => {
