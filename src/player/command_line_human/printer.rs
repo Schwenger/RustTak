@@ -93,7 +93,7 @@ impl BoardCell {
         BoardCell { inner: vec![vec!["┼".bold().to_string()]] }
     }
 
-    fn from(mut s: &Stack) -> BoardCell {
+    fn from(s: &Stack) -> BoardCell {
         let mut s = s.clone(); // TODO: Avoid this clone.
         let num_printable = CELL_WIDTH * CELL_WIDTH;
         let truncate = s.len() > num_printable;
@@ -103,7 +103,7 @@ impl BoardCell {
         }
         let num_rows = (s.len() as f32 / CELL_WIDTH as f32).ceil() as usize;
 
-        let mut sieve = |_: usize| -> Stack {
+        let sieve = |_: usize| -> Stack {
             if s.len() > CELL_WIDTH {
                 s.take_off(CELL_WIDTH)
             } else {
@@ -148,7 +148,7 @@ impl BoardCell {
         let leftover_space = CELL_WIDTH - s.len();
         let space_left = leftover_space / 2;
         for (i, piece) in s.iter().enumerate() {
-            row[i] = piece.cl_display();
+            row[i + space_left] = piece.cl_display();
         }
         row
     }
@@ -279,7 +279,6 @@ mod tests {
         let (mut board, printer) = setup(2);
         board[Position::new(1,1)] += Stack::from(vec![Piece::new(PieceKind::Stone, Color::Red)]);
         println!("{}", printer.print(&board));
-        panic!();
         let was = printer.print(&board);
         let expected = vec![
             bold("┼------┼"),

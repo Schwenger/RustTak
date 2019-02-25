@@ -1,10 +1,10 @@
 use crate::board::{Board, Position};
-use crate::actions::{Move, Action};
+use crate::actions::Action;
 use crate::simulator::Outcome;
 use std::ops::Not;
-use std::fmt::{Display, Formatter, Result as FmtResult, Debug};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
-mod command_line_human;
+pub mod command_line_human;
 
 pub trait Player: Clone {
     fn setup(board_size: usize, color: Color, first: bool) -> Self;

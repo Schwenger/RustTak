@@ -65,9 +65,9 @@ impl MoveLogic {
                     (PieceKind::CapStone, Color::Red) => red_stash.caps -= 1,
                     (PieceKind::StandingStone, Color::Red)
                     | (PieceKind::Stone, Color::Red) => red_stash.stones -= 1,
-                    (PieceKind::CapStone, Color::Blk) => red_stash.caps -= 1,
+                    (PieceKind::CapStone, Color::Blk) => blk_stash.caps -= 1,
                     (PieceKind::StandingStone, Color::Blk)
-                    | (PieceKind::Stone, Color::Blk) => red_stash.stones -= 1,
+                    | (PieceKind::Stone, Color::Blk) => blk_stash.stones -= 1,
                 }
             }
         }
@@ -169,7 +169,8 @@ impl MoveLogic {
                 let mut src = pos;
                 for n in v {
                     let dst = src.go(dir);
-                    self.board[dst] += self.board[src].take_off(n);
+                    let new_top = self.board[src].take_off(n);
+                    self.board[dst] += new_top;
                     src = dst;
                 }
             }
@@ -229,7 +230,13 @@ impl MoveLogic {
             .collect();
 
         while !frontier.is_empty() {
-            frontier = frontier.drain().flat_map(collect_neighbours).collect();
+            frontier = frontier.drain()
+                .flat_map(collect_neighbours)
+                .filter(|p| {
+                    let stack = &self.board[*p];
+                    stack.is_road() && stack.color().map(|k| k == c).unwrap_or(false)
+                })
+                .collect();
             if frontier.iter().any(is_goal) {
                 return true
             }
@@ -299,7 +306,7 @@ mod tests {
 
     fn applicable(b: &str, width: usize, action: Action, color: Color) -> bool {
         let board = parse(width, b);
-        let mut ml = MoveLogic::from_board(board);
+        let ml = MoveLogic::from_board(board);
         ml.applicable(&Move{ action, player: color })
     }
 

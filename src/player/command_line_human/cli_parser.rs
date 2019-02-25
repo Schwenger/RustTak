@@ -1,8 +1,6 @@
 
 use crate::actions::Action;
 use crate::board::Position;
-use std::error::Error;
-use std::fmt::{Debug, Display, Result as FmtResult, Formatter};
 
 pub(crate) struct CLIParser {}
 

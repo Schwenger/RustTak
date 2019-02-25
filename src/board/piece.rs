@@ -1,7 +1,6 @@
 
 use crate::player::Color;
 use std::ops::{AddAssign, SubAssign};
-use crate::board::piece::PieceKind::CapStone;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Piece {
@@ -209,15 +208,14 @@ mod tests {
 
     #[test]
     fn flattening_standing_fail() {
-        let bot_original = stack_with_standing_rbr();
-        let mut bot = bot_original.clone();
+        let bot = stack_with_standing_rbr();
         let top = stack_with_cap_rbr();
         assert!(!bot.compatible_with(&top));
     }
 
     #[test]
     fn flattening_capstone_fail() {
-        let mut bot = stack_with_standing_rbr();
+        let bot = stack_with_standing_rbr();
         let top = stack_with_cap_rbr();
         assert!(!bot.compatible_with(&top));
     }

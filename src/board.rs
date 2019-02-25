@@ -49,12 +49,6 @@ impl Board {
         Board { board: vec![vec![Stack::empty(); size]; size] }
     }
 
-    pub(crate) fn remove_from(&mut self, pos: Position) -> Stack {
-        let res = self[pos].clone();
-        self[pos] = Stack::empty();
-        res
-    }
-
     pub(crate) fn empty(&mut self, pos: Position) {
         self[pos] = Stack::empty();
     }
@@ -99,7 +93,7 @@ pub struct BoardIterator<'a> {
 impl<'a> Iterator for BoardIterator<'a> {
     type Item = &'a Stack;
     fn next(&mut self) -> Option<&'a Stack> {
-        self.inner.next().map(|(pos, s)| s)
+        self.inner.next().map(|(_pos, s)| s)
     }
 }
 

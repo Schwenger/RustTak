@@ -2,7 +2,7 @@
 use super::{Player, Color};
 use crate::simulator::{Outcome, MatchResult};
 use crate::board::{Board, Position};
-use crate::actions::{Move, Action};
+use crate::actions::Action;
 use std::io::stdin;
 
 mod printer;
@@ -23,7 +23,7 @@ impl CommandLineHuman {
 
     fn read_yes_no() -> bool {
         let mut response = String::new();
-        stdin().read_line(&mut response);
+        let _ = stdin().read_line(&mut response);
         match response.to_lowercase().as_str() {
             "yes" | "y" | "si" | "ja" | "yeah" | "yea" | "sure" | "ofc" | "what else?" => true,
             "no" | "n" | "nope" | "nein" | "nah" | "nay" | "not at all" | "niet" | "u mad?" => false,
@@ -37,7 +37,7 @@ impl CommandLineHuman {
     fn ask_in_loop<T: CLHumanDisplay, F>(&self, f: F) -> T where F: Fn(&String) -> Result<T, CLIParserError<T>> {
         loop {
             let mut response = String::new();
-            stdin().read_line(&mut response);
+            let  _ = stdin().read_line(&mut response);
             match f(&response) {
                 Ok(value) => return value,
                 Err(e) => {
@@ -82,7 +82,7 @@ impl Player for CommandLineHuman {
         println!("{}", self.printer.print(board));
         println!("What do you want to do? (Place/Slide/Move)");
         let mut command = String::new();
-        stdin().read_line(&mut command);
+        let _ = stdin().read_line(&mut command);
         self.ask_in_loop(CLIParser::action)
     }
 
@@ -98,7 +98,7 @@ impl Player for CommandLineHuman {
     fn accept_outcome(&mut self, outcome: &Outcome) {
         match outcome.result {
             MatchResult::Winner(c) if c == self.color => println!("Congratulations, you won, {}!", self.name),
-            MatchResult::Winner(c) => println!("Congratulations, you suck! {} beat you with ease.", self.opponent),
+            MatchResult::Winner(_) => println!("Congratulations, you suck! {} beat you with ease.", self.opponent),
             MatchResult::Tie => println!("Congratulations, you're just as bad as {}.", self.opponent),
         }
         println!("The final board looked as follows: \n{}", self.printer.print(&outcome.board));
