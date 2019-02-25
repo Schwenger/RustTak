@@ -29,7 +29,7 @@ impl PiecesStash {
             5 => (21, 1),
             6 => (30, 1),
             8 => (50, 2),
-            _ => panic!("Board size {} is not supported."),
+            n => ((n as f32).powf(1.88) as u16, (n/4) as u16), // The first rule seems about right, the second one not so much.
         };
         PiecesStash { stones, caps }
     }
