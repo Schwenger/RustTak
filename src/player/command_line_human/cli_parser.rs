@@ -1,4 +1,3 @@
-
 use crate::actions::Action;
 use crate::board::Position;
 

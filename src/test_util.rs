@@ -1,5 +1,5 @@
-use crate::player::{Color, Color::*};
 use crate::board::piece::{Piece, PieceKind, Stack};
+use crate::player::{Color, Color::*};
 
 pub(crate) fn stone(c: Color) -> Piece {
     Piece::new(PieceKind::Stone, c)

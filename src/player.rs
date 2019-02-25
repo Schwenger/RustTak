@@ -1,8 +1,8 @@
-use crate::board::{Board, Position};
 use crate::actions::Action;
+use crate::board::{Board, Position};
 use crate::simulator::Outcome;
-use std::ops::Not;
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::ops::Not;
 
 pub mod command_line_human;
 

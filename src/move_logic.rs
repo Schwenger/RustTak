@@ -1,9 +1,8 @@
-
-use crate::board::{Board, Position, Direction};
-use crate::actions::{Move, Action};
-use crate::player::Color;
-use crate::simulator::{Outcome, MatchResult};
+use crate::actions::{Action, Move};
 use crate::board::piece::{Piece, PieceKind};
+use crate::board::{Board, Direction, Position};
+use crate::player::Color;
+use crate::simulator::{MatchResult, Outcome};
 
 use std::collections::HashSet;
 
@@ -29,18 +28,17 @@ impl PiecesStash {
             5 => (21, 1),
             6 => (30, 1),
             8 => (50, 2),
-            n => ((n as f32).powf(1.88) as u16, (n/4) as u16), // The first rule seems about right, the second one not so much.
+            n => ((n as f32).powf(1.88) as u16, (n / 4) as u16), // The first rule seems about right, the second one not so much.
         };
         PiecesStash { stones, caps }
     }
 }
 
 enum MoveLogicError {
-    NotApplicable(Move)
+    NotApplicable(Move),
 }
 
 impl MoveLogic {
-
     pub(crate) fn new(size: usize) -> MoveLogic {
         let stash = PiecesStash::for_board_size(size);
         MoveLogic {
@@ -63,11 +61,13 @@ impl MoveLogic {
             for piece in stack.iter() {
                 match (piece.kind, piece.color) {
                     (PieceKind::CapStone, Color::Red) => red_stash.caps -= 1,
-                    (PieceKind::StandingStone, Color::Red)
-                    | (PieceKind::Stone, Color::Red) => red_stash.stones -= 1,
+                    (PieceKind::StandingStone, Color::Red) | (PieceKind::Stone, Color::Red) => {
+                        red_stash.stones -= 1
+                    }
                     (PieceKind::CapStone, Color::Blk) => blk_stash.caps -= 1,
-                    (PieceKind::StandingStone, Color::Blk)
-                    | (PieceKind::Stone, Color::Blk) => blk_stash.stones -= 1,
+                    (PieceKind::StandingStone, Color::Blk) | (PieceKind::Stone, Color::Blk) => {
+                        blk_stash.stones -= 1
+                    }
                 }
             }
         }
@@ -86,7 +86,10 @@ impl MoveLogic {
     }
 
     pub(crate) fn first_turn(&mut self, pos: Position, c: Color) {
-        self.apply(Move { player: !c, action: Action::Place(pos, PieceKind::Stone) });
+        self.apply(Move {
+            player: !c,
+            action: Action::Place(pos, PieceKind::Stone),
+        });
     }
 
     fn valid_pos(&self, pos: Position) -> bool {
@@ -120,7 +123,9 @@ impl MoveLogic {
     pub(crate) fn applicable(&self, mv: &Move) -> bool {
         match mv.action {
             Action::Place(pos, kind) => {
-                self.valid_pos(pos) && self.piece_count(mv.player, kind) > 0 && self.board[pos].is_empty()
+                self.valid_pos(pos)
+                    && self.piece_count(mv.player, kind) > 0
+                    && self.board[pos].is_empty()
             }
             Action::Slide(pos, dir, ref v) => {
                 let size = self.board_size; // Abbreviation
@@ -129,13 +134,11 @@ impl MoveLogic {
                 let contains_0 = || v.iter().find(|n| **n == 0).is_some();
                 let too_many = || self.board_size < v.iter().sum();
                 let color = || self.board[pos].color().unwrap() == mv.player;
-                let oob = || {
-                    match dir {
-                        Direction::North => pos.row + v.len() > size,
-                        Direction::East => pos.col + v.len() > size,
-                        Direction::South => pos.row < v.len(),
-                        Direction::West => pos.col < v.len(),
-                    }
+                let oob = || match dir {
+                    Direction::North => pos.row + v.len() > size,
+                    Direction::East => pos.col + v.len() > size,
+                    Direction::South => pos.row < v.len(),
+                    Direction::West => pos.col < v.len(),
                 };
                 let all_comp = || {
                     let mut src = pos;
@@ -146,14 +149,20 @@ impl MoveLogic {
                     for n in &v[1..] {
                         let dst = src.go(dir);
                         if !self.board[dst].compatible_with(&carried) {
-                            return false
+                            return false;
                         }
                         src = dst;
                         carried = carried.peek_from_top(*n);
                     }
                     true
                 };
-                dbg!(val_pos()) && dbg!(!empty()) && dbg!(!contains_0()) && dbg!(!too_many()) && dbg!(color()) && dbg!(!oob()) && dbg!(all_comp())
+                dbg!(val_pos())
+                    && dbg!(!empty())
+                    && dbg!(!contains_0())
+                    && dbg!(!too_many())
+                    && dbg!(color())
+                    && dbg!(!oob())
+                    && dbg!(all_comp())
             }
         }
     }
@@ -186,8 +195,10 @@ impl MoveLogic {
             (false, true) => MatchResult::Winner(Color::Blk),
             (false, false) => return None,
         };
-        Some(Outcome { result: res, board: self.board.clone() })
-
+        Some(Outcome {
+            result: res,
+            board: self.board.clone(),
+        })
     }
 
     fn is_winner(&self, c: Color) -> bool {
@@ -200,8 +211,8 @@ impl MoveLogic {
             match dir {
                 Direction::North => pos.row == self.board_size - 1,
                 Direction::South => pos.row == 0,
-                Direction::East  => pos.col == self.board_size - 1,
-                Direction::West  => pos.col == 0,
+                Direction::East => pos.col == self.board_size - 1,
+                Direction::West => pos.col == 0,
             }
         };
         let collect_neighbours = |pos: Position| -> Vec<Position> {
@@ -230,7 +241,8 @@ impl MoveLogic {
             .collect();
 
         while !frontier.is_empty() {
-            frontier = frontier.drain()
+            frontier = frontier
+                .drain()
                 .flat_map(collect_neighbours)
                 .filter(|p| {
                     let stack = &self.board[*p];
@@ -238,14 +250,13 @@ impl MoveLogic {
                 })
                 .collect();
             if frontier.iter().any(is_goal) {
-                return true
+                return true;
             }
             frontier.difference(&closed);
             closed.extend(frontier.iter());
         }
         false
     }
-
 }
 
 #[cfg(test)]
@@ -269,7 +280,7 @@ mod tests {
                 let color = match c {
                     'r' => Red,
                     'b' => Blk,
-                    sym => panic!("Unrecognized symbol `{}`.", sym)
+                    sym => panic!("Unrecognized symbol `{}`.", sym),
                 };
                 let kind = match cs.next() {
                     Some('s') => PieceKind::Stone,
@@ -300,14 +311,20 @@ mod tests {
     fn apply(b: &str, width: usize, action: Action, color: Color) -> (MoveLogic, Option<Outcome>) {
         let board = parse(width, b);
         let mut ml = MoveLogic::from_board(board);
-        let oc = ml.apply(Move { action, player: color });
+        let oc = ml.apply(Move {
+            action,
+            player: color,
+        });
         (ml, oc)
     }
 
     fn applicable(b: &str, width: usize, action: Action, color: Color) -> bool {
         let board = parse(width, b);
         let ml = MoveLogic::from_board(board);
-        ml.applicable(&Move{ action, player: color })
+        ml.applicable(&Move {
+            action,
+            player: color,
+        })
     }
 
     #[test]
@@ -328,7 +345,7 @@ mod tests {
                 assert_eq!(stack, &Stack::empty());
             }
         }
-//        assert!(oc.is_none())
+        //        assert!(oc.is_none())
     }
 
     #[test]
@@ -374,15 +391,18 @@ mod tests {
         !  ! !
         !  ! !
         ";
-        let expected = parse(3, "\
+        let expected = parse(
+            3,
+            "\
         RSRS ! !
         !    ! !
         !    ! !
-        ");
+        ",
+        );
         let source = Position::new(0, 1);
         let action = Action::Slide(source, Direction::West, vec![1]);
         let (ml, oc) = apply(start, 3, action, Red);
-//        assert!(oc.is_none());
+        //        assert!(oc.is_none());
         let was = ml.peek();
         assert_eq!(was, &expected);
     }

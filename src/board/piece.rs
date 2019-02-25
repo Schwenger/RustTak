@@ -1,4 +1,3 @@
-
 use crate::player::Color;
 use std::ops::{AddAssign, SubAssign};
 
@@ -54,7 +53,6 @@ pub struct Stack {
 }
 
 impl Stack {
-
     pub fn nth_piece(&self, n: usize) -> Piece {
         self.content[self.len() - 1 - n]
     }
@@ -64,7 +62,9 @@ impl Stack {
     }
 
     pub(crate) fn empty() -> Stack {
-        Stack { content: Vec::new() }
+        Stack {
+            content: Vec::new(),
+        }
     }
 
     pub(crate) fn is_road(&self) -> bool {
@@ -80,7 +80,7 @@ impl Stack {
     }
 
     pub(crate) fn take_off(&mut self, n: usize) -> Stack {
-        self.content.split_off(self.content.len() -  n).into()
+        self.content.split_off(self.content.len() - n).into()
     }
 
     pub(crate) fn peek_from_top(&self, n: usize) -> Stack {
@@ -106,7 +106,9 @@ impl Stack {
 
     fn is_flattening(&self) -> bool {
         if self.content.len() == 1 {
-            self.top().map(|t| t.kind == PieceKind::CapStone).unwrap_or(false)
+            self.top()
+                .map(|t| t.kind == PieceKind::CapStone)
+                .unwrap_or(false)
         } else {
             false
         }
@@ -123,7 +125,10 @@ impl Stack {
     fn flatten(&mut self) {
         if let Some(top) = self.top() {
             let new_top = match top.kind {
-                PieceKind::StandingStone => Piece { kind: PieceKind::Stone, color: top.color },
+                PieceKind::StandingStone => Piece {
+                    kind: PieceKind::Stone,
+                    color: top.color,
+                },
                 _ => return, // Short-circuit-ish
             };
             *self -= 1;
@@ -136,12 +141,9 @@ impl Stack {
             true
         } else {
             let tail = &self.content[0..(self.len() - 1)];
-            tail.iter().all(|p| {
-                PieceKind::Stone == p.kind
-            })
+            tail.iter().all(|p| PieceKind::Stone == p.kind)
         }
     }
-
 }
 
 impl AddAssign for Stack {
@@ -175,9 +177,12 @@ impl From<Vec<Piece>> for Stack {
 #[cfg(test)]
 mod tests {
 
-    use super::{Stack, Piece};
-    use crate::player::{Color, Color::{Red, Blk}};
+    use super::{Piece, Stack};
     use crate::board::piece::PieceKind;
+    use crate::player::{
+        Color,
+        Color::{Blk, Red},
+    };
     use crate::test_util::*;
 
     #[test]

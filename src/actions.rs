@@ -1,5 +1,5 @@
+use crate::board::{piece::PieceKind, Direction, Position};
 use crate::player::Color;
-use crate::board::{Position, Direction, piece::PieceKind};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Move {

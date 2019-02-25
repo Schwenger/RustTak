@@ -1,8 +1,7 @@
-
 pub(crate) mod piece;
 
 use self::piece::Stack;
-use std::ops::{IndexMut, Index};
+use std::ops::{Index, IndexMut};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -11,17 +10,28 @@ pub struct Position {
 }
 
 impl Position {
-
     pub fn new(row: usize, col: usize) -> Position {
         Position { row, col }
     }
 
     pub(crate) fn go(self, dir: Direction) -> Position {
         match dir {
-            Direction::North => Position{ row: self.row + 1, col: self.col },
-            Direction::South => Position{ row: self.row - 1, col: self.col },
-            Direction::East  => Position{ row: self.row, col: self.col + 1 },
-            Direction::West  => Position{ row: self.row, col: self.col - 1 },
+            Direction::North => Position {
+                row: self.row + 1,
+                col: self.col,
+            },
+            Direction::South => Position {
+                row: self.row - 1,
+                col: self.col,
+            },
+            Direction::East => Position {
+                row: self.row,
+                col: self.col + 1,
+            },
+            Direction::West => Position {
+                row: self.row,
+                col: self.col - 1,
+            },
         }
     }
 }
@@ -46,7 +56,9 @@ impl Index<Position> for Board {
 
 impl Board {
     pub(crate) fn new(size: usize) -> Board {
-        Board { board: vec![vec![Stack::empty(); size]; size] }
+        Board {
+            board: vec![vec![Stack::empty(); size]; size],
+        }
     }
 
     pub(crate) fn empty(&mut self, pos: Position) {
