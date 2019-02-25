@@ -36,6 +36,10 @@ impl PiecesStash {
     }
 }
 
+enum MoveLogicError {
+    NotApplicable(Move)
+}
+
 impl MoveLogic {
 
     pub(crate) fn new(size: usize) -> MoveLogic {
@@ -44,6 +48,35 @@ impl MoveLogic {
             board: Board::new(size),
             red_pieces: stash,
             blk_pieces: stash,
+            board_size: size,
+            last_applied_move: None,
+        }
+    }
+
+    /// Create a MoveLogic for a given board.
+    /// Note it is assumed that the last applied move is `None` even if there is only one
+    /// logical choice.
+    pub(crate) fn from_board(board: Board) -> MoveLogic {
+        let mut red_stash = PiecesStash::for_board_size(board.size());
+        let mut blk_stash = PiecesStash::for_board_size(board.size());
+        use crate::board::piece::PieceKind;
+        for stack in board.iter() {
+            for piece in stack.iter() {
+                match (piece.kind, piece.color) {
+                    (PieceKind::CapStone, Color::Red) => red_stash.caps -= 1,
+                    (PieceKind::StandingStone, Color::Red)
+                    | (PieceKind::Stone, Color::Red) => red_stash.stones -= 1,
+                    (PieceKind::CapStone, Color::Blk) => red_stash.caps -= 1,
+                    (PieceKind::StandingStone, Color::Blk)
+                    | (PieceKind::Stone, Color::Blk) => red_stash.stones -= 1,
+                }
+            }
+        }
+        let size = board.size();
+        MoveLogic {
+            board,
+            red_pieces: red_stash,
+            blk_pieces: blk_stash,
             board_size: size,
             last_applied_move: None,
         }
@@ -86,6 +119,7 @@ impl MoveLogic {
     }
 
     // TODO: Return error message.
+    // TODO: Make sure red does not move blk and vice versa.
     pub(crate) fn applicable(&self, mv: &Move) -> bool {
         match mv.action {
             Action::Place(pos, kind) => {
@@ -96,7 +130,7 @@ impl MoveLogic {
                 let val_pos = || self.valid_pos(pos);
                 let empty = || v.is_empty();
                 let contains_0 = || v.iter().find(|n| **n == 0).is_some();
-                let too_many = || self.board_size >= v.iter().sum();
+                let too_many = || self.board_size < v.iter().sum();
                 let color = || self.board[pos].color().unwrap() == mv.player;
                 let oob = || {
                     match dir {
@@ -108,6 +142,9 @@ impl MoveLogic {
                 };
                 let all_comp = || {
                     let mut src = pos;
+                    if self.board[src].len() < *v.first().unwrap() {
+                        return false;
+                    }
                     let mut carried = self.board[src].peek_from_top(*v.first().unwrap());
                     for n in &v[1..] {
                         let dst = src.go(dir);
@@ -119,7 +156,7 @@ impl MoveLogic {
                     }
                     true
                 };
-                val_pos() && !empty() && !contains_0() && !too_many() && color() && !oob() && all_comp()
+                dbg!(val_pos()) && dbg!(!empty()) && dbg!(!contains_0()) && dbg!(!too_many()) && dbg!(color()) && dbg!(!oob()) && dbg!(all_comp())
             }
         }
     }
@@ -205,4 +242,144 @@ impl MoveLogic {
         false
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::board::piece::Stack;
+    use crate::player::Color::*;
+    use crate::test_util::*;
+
+    fn parse_single(s: &str) -> Stack {
+        let s = s.to_lowercase();
+        if s.len() == 1 {
+            assert_eq!(s, "!");
+            Stack::empty()
+        } else {
+            assert_eq!(s.len() % 2, 0);
+            let mut stack = Vec::new();
+            let mut cs = s.chars();
+            while let Some(c) = cs.next() {
+                let color = match c {
+                    'r' => Red,
+                    'b' => Blk,
+                    sym => panic!("Unrecognized symbol `{}`.", sym)
+                };
+                let kind = match cs.next() {
+                    Some('s') => PieceKind::Stone,
+                    Some('w') | Some('x') => PieceKind::StandingStone,
+                    Some('c') => PieceKind::CapStone,
+                    Some(_) => panic!("Unrecognized symbol"),
+                    None => unreachable!(),
+                };
+                stack.push(Piece::new(kind, color));
+            }
+            Stack::from(stack)
+        }
+    }
+
+    fn parse(width: usize, s: &str) -> Board {
+        let mut row = 0;
+        let mut board = Board::new(width);
+        for (ix, stack) in s.split_whitespace().map(parse_single).enumerate() {
+            if ix == width {
+                row += 1;
+            }
+            let col = ix % width;
+            board[Position::new(row, col)] = stack;
+        }
+        board
+    }
+
+    fn apply(b: &str, width: usize, action: Action, color: Color) -> (MoveLogic, Option<Outcome>) {
+        let board = parse(width, b);
+        let mut ml = MoveLogic::from_board(board);
+        let oc = ml.apply(Move { action, player: color });
+        (ml, oc)
+    }
+
+    fn applicable(b: &str, width: usize, action: Action, color: Color) -> bool {
+        let board = parse(width, b);
+        let mut ml = MoveLogic::from_board(board);
+        ml.applicable(&Move{ action, player: color })
+    }
+
+    #[test]
+    fn test_place_on_empty() {
+        let s = "\
+        ! ! !
+        ! ! !
+        ! ! !
+        ";
+        let target = Position::new(1, 2);
+        let action = Action::Place(target, PieceKind::Stone);
+        let (ml, oc) = apply(s, 3, action, Red);
+        let board = ml.peek();
+        for (pos, stack) in board.iter().with_pos() {
+            if pos == target {
+                assert_eq!(stack, &single_stone(Red));
+            } else {
+                assert_eq!(stack, &Stack::empty());
+            }
+        }
+//        assert!(oc.is_none())
+    }
+
+    #[test]
+    fn test_applicable_place_invalid() {
+        let s = "\
+        RS ! !
+        !  ! !
+        !  ! !
+        ";
+        let target = Position::new(0, 0);
+        let action = Action::Place(target, PieceKind::Stone);
+        assert!(!applicable(s, 3, action, Red));
+    }
+
+    #[test]
+    fn test_applicable_place_invalid_flatten() {
+        let s = "\
+        RX ! !
+        !  ! !
+        !  ! !
+        ";
+        let target = Position::new(0, 0);
+        let action = Action::Place(target, PieceKind::CapStone);
+        assert!(!applicable(s, 3, action, Red));
+    }
+
+    #[test]
+    fn test_applicable_invalid_move_on_wall() {
+        let s = "\
+        RX RS !
+        !  ! !
+        !  ! !
+        ";
+        let source = Position::new(0, 1);
+        let action = Action::Slide(source, Direction::West, vec![1]);
+        assert!(!applicable(s, 3, action, Red));
+    }
+
+    #[test]
+    fn test_apply_move_on_stone() {
+        let start = "\
+        RS RS !
+        !  ! !
+        !  ! !
+        ";
+        let expected = parse(3, "\
+        RSRS ! !
+        !    ! !
+        !    ! !
+        ");
+        let source = Position::new(0, 1);
+        let action = Action::Slide(source, Direction::West, vec![1]);
+        let (ml, oc) = apply(start, 3, action, Red);
+//        assert!(oc.is_none());
+        let was = ml.peek();
+        assert_eq!(was, &expected);
+    }
 }

@@ -3,6 +3,7 @@ mod simulator;
 mod actions;
 mod board;
 mod move_logic;
+mod test_util;
 
 #[cfg(test)]
 mod tests {

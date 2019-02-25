@@ -172,3 +172,101 @@ impl From<Vec<Piece>> for Stack {
         res
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::{Stack, Piece};
+    use crate::player::{Color, Color::{Red, Blk}};
+    use crate::board::piece::PieceKind;
+    use crate::test_util::*;
+
+    #[test]
+    fn take_off() {
+        let mut subject = stack_with_cap_rbr();
+        assert_eq!(subject.take_off(0), Stack::from(Vec::new()));
+        assert_eq!(subject, stack_with_cap_rbr());
+        assert_eq!(subject.take_off(1), single_cap(Red));
+        assert_eq!(subject, Stack::from(vec![stone(Red), stone(Blk)]));
+        assert_eq!(subject.take_off(1), single_stone(Blk));
+        assert_eq!(subject, single_stone(Red));
+        assert_eq!(subject.take_off(1), single_stone(Red));
+        assert_eq!(subject, Stack::from(Vec::new()));
+    }
+
+    #[test]
+    fn flattening_standing_success() {
+        let mut control = stack_with_standing_rbr();
+        let mut subject = control.clone();
+        let top = single_cap(Red);
+        assert!(subject.compatible_with(&top));
+        subject += top.clone();
+        assert_eq!(subject.take_off(top.len()), top);
+        control -= 1;
+        control += Piece::new(PieceKind::Stone, Color::Red);
+        assert_eq!(subject, control);
+    }
+
+    #[test]
+    fn flattening_standing_fail() {
+        let bot_original = stack_with_standing_rbr();
+        let mut bot = bot_original.clone();
+        let top = stack_with_cap_rbr();
+        assert!(!bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn flattening_capstone_fail() {
+        let mut bot = stack_with_standing_rbr();
+        let top = stack_with_cap_rbr();
+        assert!(!bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn test_compatible_stack() {
+        let bot = stack_with_cap_rbr();
+        let top = single_stone(Red);
+        assert!(!bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn test_compatible_solo() {
+        let bot = single_cap(Red);
+        let top = single_stone(Red);
+        assert!(!bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn test_compatible_stone() {
+        let bot = single_stone(Red);
+        let top = single_cap(Red);
+        assert!(bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn test_compatible_standing() {
+        let bot = single_stone(Red);
+        let top = single_standing(Red);
+        assert!(bot.compatible_with(&top));
+    }
+
+    #[test]
+    fn test_nth() {
+        let mut s0 = stack_stone_rbr();
+        let s1 = stack_with_standing_rbr();
+        let s2 = single_cap(Blk);
+        s0 += s1;
+        s0 += s2;
+        // Red Blk Red Red Blk Red Blk
+        // Sto Sto Sto Sto Sto Sto Cap
+        // 6   5   4   3   2   1   0
+        assert_eq!(s0.nth_piece(0), cap_stone(Blk));
+        assert_eq!(s0.nth_piece(1), stone(Red));
+        assert_eq!(s0.nth_piece(2), stone(Blk));
+        assert_eq!(s0.nth_piece(3), stone(Red));
+        assert_eq!(s0.nth_piece(4), stone(Red));
+        assert_eq!(s0.nth_piece(5), stone(Blk));
+        assert_eq!(s0.nth_piece(6), stone(Red));
+    }
+
+}
