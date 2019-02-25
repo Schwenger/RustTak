@@ -16,22 +16,10 @@ impl Position {
 
     pub(crate) fn go(self, dir: Direction) -> Position {
         match dir {
-            Direction::North => Position {
-                row: self.row + 1,
-                col: self.col,
-            },
-            Direction::South => Position {
-                row: self.row - 1,
-                col: self.col,
-            },
-            Direction::East => Position {
-                row: self.row,
-                col: self.col + 1,
-            },
-            Direction::West => Position {
-                row: self.row,
-                col: self.col - 1,
-            },
+            Direction::North => Position { row: self.row + 1, col: self.col },
+            Direction::South => Position { row: self.row - 1, col: self.col },
+            Direction::East => Position { row: self.row, col: self.col + 1 },
+            Direction::West => Position { row: self.row, col: self.col - 1 },
         }
     }
 }
@@ -56,9 +44,7 @@ impl Index<Position> for Board {
 
 impl Board {
     pub(crate) fn new(size: usize) -> Board {
-        Board {
-            board: vec![vec![Stack::empty(); size]; size],
-        }
+        Board { board: vec![vec![Stack::empty(); size]; size] }
     }
 
     pub(crate) fn empty(&mut self, pos: Position) {
@@ -111,19 +97,13 @@ impl<'a> Iterator for BoardIterator<'a> {
 
 impl<'a> PosBoardIterator<'a> {
     fn new(board: &Board) -> PosBoardIterator {
-        PosBoardIterator {
-            row: 0,
-            col: 0,
-            board,
-        }
+        PosBoardIterator { row: 0, col: 0, board }
     }
 }
 
 impl<'a> BoardIterator<'a> {
     fn new(board: &Board) -> BoardIterator {
-        BoardIterator {
-            inner: PosBoardIterator::new(board),
-        }
+        BoardIterator { inner: PosBoardIterator::new(board) }
     }
 
     pub fn with_pos(self) -> PosBoardIterator<'a> {

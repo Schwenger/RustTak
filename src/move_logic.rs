@@ -61,24 +61,14 @@ impl MoveLogic {
             for piece in stack.iter() {
                 match (piece.kind, piece.color) {
                     (PieceKind::CapStone, Color::Red) => red_stash.caps -= 1,
-                    (PieceKind::StandingStone, Color::Red) | (PieceKind::Stone, Color::Red) => {
-                        red_stash.stones -= 1
-                    }
+                    (PieceKind::StandingStone, Color::Red) | (PieceKind::Stone, Color::Red) => red_stash.stones -= 1,
                     (PieceKind::CapStone, Color::Blk) => blk_stash.caps -= 1,
-                    (PieceKind::StandingStone, Color::Blk) | (PieceKind::Stone, Color::Blk) => {
-                        blk_stash.stones -= 1
-                    }
+                    (PieceKind::StandingStone, Color::Blk) | (PieceKind::Stone, Color::Blk) => blk_stash.stones -= 1,
                 }
             }
         }
         let size = board.size();
-        MoveLogic {
-            board,
-            red_pieces: red_stash,
-            blk_pieces: blk_stash,
-            board_size: size,
-            last_applied_move: None,
-        }
+        MoveLogic { board, red_pieces: red_stash, blk_pieces: blk_stash, board_size: size, last_applied_move: None }
     }
 
     pub(crate) fn peek(&self) -> &Board {
@@ -86,10 +76,7 @@ impl MoveLogic {
     }
 
     pub(crate) fn first_turn(&mut self, pos: Position, c: Color) {
-        self.apply(Move {
-            player: !c,
-            action: Action::Place(pos, PieceKind::Stone),
-        });
+        self.apply(Move { player: !c, action: Action::Place(pos, PieceKind::Stone) });
     }
 
     fn valid_pos(&self, pos: Position) -> bool {
@@ -123,9 +110,7 @@ impl MoveLogic {
     pub(crate) fn applicable(&self, mv: &Move) -> bool {
         match mv.action {
             Action::Place(pos, kind) => {
-                self.valid_pos(pos)
-                    && self.piece_count(mv.player, kind) > 0
-                    && self.board[pos].is_empty()
+                self.valid_pos(pos) && self.piece_count(mv.player, kind) > 0 && self.board[pos].is_empty()
             }
             Action::Slide(pos, dir, ref v) => {
                 let size = self.board_size; // Abbreviation
@@ -195,10 +180,7 @@ impl MoveLogic {
             (false, true) => MatchResult::Winner(Color::Blk),
             (false, false) => return None,
         };
-        Some(Outcome {
-            result: res,
-            board: self.board.clone(),
-        })
+        Some(Outcome { result: res, board: self.board.clone() })
     }
 
     fn is_winner(&self, c: Color) -> bool {
@@ -235,10 +217,8 @@ impl MoveLogic {
 
         // Naive approach:
         let mut closed = HashSet::new();
-        let mut frontier: HashSet<Position> = (0..self.board_size)
-            .map(|ix| vec![Position::new(0, ix), Position::new(ix, 0)])
-            .flatten()
-            .collect();
+        let mut frontier: HashSet<Position> =
+            (0..self.board_size).map(|ix| vec![Position::new(0, ix), Position::new(ix, 0)]).flatten().collect();
 
         while !frontier.is_empty() {
             frontier = frontier
@@ -311,20 +291,14 @@ mod tests {
     fn apply(b: &str, width: usize, action: Action, color: Color) -> (MoveLogic, Option<Outcome>) {
         let board = parse(width, b);
         let mut ml = MoveLogic::from_board(board);
-        let oc = ml.apply(Move {
-            action,
-            player: color,
-        });
+        let oc = ml.apply(Move { action, player: color });
         (ml, oc)
     }
 
     fn applicable(b: &str, width: usize, action: Action, color: Color) -> bool {
         let board = parse(width, b);
         let ml = MoveLogic::from_board(board);
-        ml.applicable(&Move {
-            action,
-            player: color,
-        })
+        ml.applicable(&Move { action, player: color })
     }
 
     #[test]

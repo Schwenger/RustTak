@@ -62,9 +62,7 @@ impl Stack {
     }
 
     pub(crate) fn empty() -> Stack {
-        Stack {
-            content: Vec::new(),
-        }
+        Stack { content: Vec::new() }
     }
 
     pub(crate) fn is_road(&self) -> bool {
@@ -106,9 +104,7 @@ impl Stack {
 
     fn is_flattening(&self) -> bool {
         if self.content.len() == 1 {
-            self.top()
-                .map(|t| t.kind == PieceKind::CapStone)
-                .unwrap_or(false)
+            self.top().map(|t| t.kind == PieceKind::CapStone).unwrap_or(false)
         } else {
             false
         }
@@ -125,10 +121,7 @@ impl Stack {
     fn flatten(&mut self) {
         if let Some(top) = self.top() {
             let new_top = match top.kind {
-                PieceKind::StandingStone => Piece {
-                    kind: PieceKind::Stone,
-                    color: top.color,
-                },
+                PieceKind::StandingStone => Piece { kind: PieceKind::Stone, color: top.color },
                 _ => return, // Short-circuit-ish
             };
             *self -= 1;

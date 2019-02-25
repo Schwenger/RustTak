@@ -13,27 +13,13 @@ pub(crate) trait CLHumanDisplay {
 impl CLHumanDisplay for Action {
     fn cl_display(&self) -> String {
         match self {
-            Action::Place(pos, kind) => {
-                format!("placed a {} at {}", pos.cl_display(), kind.cl_display())
+            Action::Place(pos, kind) => format!("placed a {} at {}", pos.cl_display(), kind.cl_display()),
+            Action::Slide(src, dir, v) if v.len() == 1 => {
+                format!("moved {} pieces from {} {}", v[0], src.cl_display(), dir.cl_display())
             }
-            Action::Slide(src, dir, v) if v.len() == 1 => format!(
-                "moved {} pieces from {} {}",
-                v[0],
-                src.cl_display(),
-                dir.cl_display()
-            ),
             Action::Slide(src, dir, v) => {
-                let takes = v
-                    .iter()
-                    .map(|n| format!("{}", n))
-                    .collect::<Vec<String>>()
-                    .join(", ");
-                format!(
-                    "started sliding {} from {} taking {} pieces",
-                    dir.cl_display(),
-                    src.cl_display(),
-                    takes
-                )
+                let takes = v.iter().map(|n| format!("{}", n)).collect::<Vec<String>>().join(", ");
+                format!("started sliding {} from {} taking {} pieces", dir.cl_display(), src.cl_display(), takes)
             }
         }
     }
@@ -87,33 +73,23 @@ struct BoardCell {
 const CELL_WIDTH: usize = 3;
 impl BoardCell {
     fn default() -> BoardCell {
-        BoardCell {
-            inner: vec![Vec::new()],
-        }
+        BoardCell { inner: vec![Vec::new()] }
     }
 
     fn empty() -> BoardCell {
-        BoardCell {
-            inner: vec![Self::empty_row(); CELL_WIDTH],
-        }
+        BoardCell { inner: vec![Self::empty_row(); CELL_WIDTH] }
     }
 
     fn straight() -> BoardCell {
-        BoardCell {
-            inner: vec![vec!["-".bold().to_string(); CELL_WIDTH]],
-        }
+        BoardCell { inner: vec![vec!["-".bold().to_string(); CELL_WIDTH]] }
     }
 
     fn pipe() -> BoardCell {
-        BoardCell {
-            inner: vec![vec!["|".bold().to_string()]; CELL_WIDTH],
-        }
+        BoardCell { inner: vec![vec!["|".bold().to_string()]; CELL_WIDTH] }
     }
 
     fn cross() -> BoardCell {
-        BoardCell {
-            inner: vec![vec!["┼".bold().to_string()]],
-        }
+        BoardCell { inner: vec![vec!["┼".bold().to_string()]] }
     }
 
     fn from(s: &Stack) -> BoardCell {
@@ -134,10 +110,7 @@ impl BoardCell {
             }
         };
 
-        let rows = (0..num_rows)
-            .map(sieve)
-            .map(Self::transform_single_row_stack)
-            .collect();
+        let rows = (0..num_rows).map(sieve).map(Self::transform_single_row_stack).collect();
         let content = Self::distribute_rows(rows);
 
         BoardCell { inner: content }
@@ -217,10 +190,7 @@ impl CIBoardPrinter {
     pub(crate) fn new(board_size: usize) -> CIBoardPrinter {
         let size = board_size + 2;
         let board = vec![vec![BoardCell::default(); size]; size];
-        let printer = CIBoardPrinter {
-            board: RefCell::new(board),
-            size,
-        };
+        let printer = CIBoardPrinter { board: RefCell::new(board), size };
         let mut board = printer.board.borrow_mut();
         board[printer.header_row()][printer.left_border()] = BoardCell::cross();
         board[printer.footer_row()][printer.left_border()] = BoardCell::cross();
@@ -240,11 +210,7 @@ impl CIBoardPrinter {
     }
 
     fn print_header_footer(&self, cells: &Ref<Vec<Vec<BoardCell>>>, header: bool) -> String {
-        let row = if header {
-            self.header_row()
-        } else {
-            self.footer_row()
-        };
+        let row = if header { self.header_row() } else { self.footer_row() };
         let mut accu = String::new();
         for col in self.full_range() {
             accu += &cells[row][col].get_row(0);
@@ -295,9 +261,7 @@ mod tests {
     }
 
     fn bold(s: &str) -> String {
-        s.chars()
-            .map(|c| c.to_string().bold().to_string())
-            .collect()
+        s.chars().map(|c| c.to_string().bold().to_string()).collect()
     }
 
     #[test]

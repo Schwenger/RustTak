@@ -24,11 +24,7 @@ pub struct Simulator<R, B> {
 impl<R: Player, B: Player> Simulator<R, B> {
     /// Red always starts!
     pub fn new(red: R, blk: B, size: usize) -> Simulator<R, B> {
-        Simulator {
-            logic: MoveLogic::new(size),
-            red,
-            blk,
-        }
+        Simulator { logic: MoveLogic::new(size), red, blk }
     }
 
     pub fn start(mut self) -> Outcome {
@@ -52,11 +48,7 @@ impl<R: Player, B: Player> Simulator<R, B> {
     }
 
     fn next_move(&mut self, c: Color) -> Option<Outcome> {
-        let last = self
-            .logic
-            .last_applied_move
-            .as_ref()
-            .map(|m| m.action.clone());
+        let last = self.logic.last_applied_move.as_ref().map(|m| m.action.clone());
         let action = match c {
             Color::Red => self.red.action_for(self.logic.peek(), last),
             Color::Blk => self.blk.action_for(self.logic.peek(), last),
