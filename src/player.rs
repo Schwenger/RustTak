@@ -7,10 +7,11 @@ use std::fmt::{Display, Formatter, Result as FmtResult, Debug};
 mod command_line_human;
 
 pub trait Player: Clone {
-    fn welcome(&self, first: bool, opponent: &String);
-    fn action_for(&self, board: &Board, opponent_action: Option<Action>) -> Action;
-    fn first_action(&self, board: &Board) -> Position;
-    fn accept_outcome(&self, outcome: &Outcome);
+    fn setup(board_size: usize, color: Color, first: bool) -> Self;
+    fn welcome(&mut self, opponent: &String);
+    fn action_for(&mut self, board: &Board, opponent_action: Option<Action>) -> Action;
+    fn first_action(&mut self, board: &Board) -> Position;
+    fn accept_outcome(&mut self, outcome: &Outcome);
     fn name(&self) -> &String;
 }
 
