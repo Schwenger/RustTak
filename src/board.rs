@@ -69,6 +69,68 @@ impl Board {
     }
 }
 
+pub struct PosBoardIterator<'a> {
+    row: usize,
+    col: usize,
+    board: &'a Board,
+}
+
+impl<'a> Iterator for PosBoardIterator<'a> {
+    type Item = (Position, &'a Stack);
+    fn next(&mut self) -> Option<(Position, &'a Stack)> {
+        if self.row >= self.board.size() {
+            return None;
+        }
+        let pos = Position::new(self.row, self.col);
+        let current = &self.board[pos];
+        self.col += 1;
+        if self.col == self.board.size() {
+            self.col = 0;
+            self.row += 1;
+        }
+        Some((pos, current))
+    }
+}
+
+pub struct BoardIterator<'a> {
+    inner: PosBoardIterator<'a>,
+}
+
+impl<'a> Iterator for BoardIterator<'a> {
+    type Item = &'a Stack;
+    fn next(&mut self) -> Option<&'a Stack> {
+        self.inner.next().map(|(pos, s)| s)
+    }
+}
+
+impl<'a> PosBoardIterator<'a> {
+    fn new(board: &Board) -> PosBoardIterator {
+        PosBoardIterator {
+            row: 0,
+            col: 0,
+            board,
+        }
+    }
+}
+
+impl<'a> BoardIterator<'a> {
+    fn new(board: &Board) -> BoardIterator {
+        BoardIterator {
+            inner: PosBoardIterator::new(board),
+        }
+    }
+
+    pub fn with_pos(self) -> PosBoardIterator<'a> {
+        self.inner
+    }
+}
+
+impl Board {
+    pub fn iter(&self) -> BoardIterator {
+        BoardIterator::new(&self)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     North,
