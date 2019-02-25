@@ -19,7 +19,7 @@ impl CommandLineHuman {
     fn new(board_size: usize) -> CommandLineHuman {
         println!("Welcome to Tak!\nWhat's your name?");
         let mut name = String::new();
-        stdin().read_line(&mut name);
+        let _ = stdin().read_line(&mut name);
         let printer = CIBoardPrinter::new(board_size);
         CommandLineHuman { name, printer }
     }

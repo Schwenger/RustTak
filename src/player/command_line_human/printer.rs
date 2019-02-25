@@ -3,59 +3,60 @@ use crate::board::piece::{Stack, Piece, PieceKind};
 use crate::board::{Position, Board, Direction};
 use crate::player::Color;
 use colored::*;
-use std::cell::RefCell;
+use std::cell::{RefCell, Ref};
+use std::ops::Range;
 
 pub(crate) trait CLHumanDisplay {
-    fn cl_display(&self) -> ColoredString;
+    fn cl_display(&self) -> String;
 }
 
 impl CLHumanDisplay for Action {
-    fn cl_display(&self) -> ColoredString {
+    fn cl_display(&self) -> String {
         match self {
-            Action::Place(pos, kind) => format!("placed a {} at {}", pos.cl_display(), kind.cl_display()).normal(),
+            Action::Place(pos, kind) => format!("placed a {} at {}", pos.cl_display(), kind.cl_display()),
             Action::Slide(src, dir, v) if v.len() == 1 =>
-                format!("moved {} pieces from {} {}", v[0], src.cl_display(), dir.cl_display()).normal(),
+                format!("moved {} pieces from {} {}", v[0], src.cl_display(), dir.cl_display()),
             Action::Slide(src, dir, v) => {
                 let takes = v.iter().map(|n| format!("{}", n)).collect::<Vec<String>>().join(", ");
-                format!("started sliding {} from {} taking {} pieces", dir.cl_display(), src.cl_display(), takes).normal()
+                format!("started sliding {} from {} taking {} pieces", dir.cl_display(), src.cl_display(), takes)
             }
         }
     }
 }
 
 impl CLHumanDisplay for PieceKind {
-    fn cl_display(&self) -> ColoredString {
+    fn cl_display(&self) -> String {
         match self {
-            PieceKind::Stone => ColoredString::from("🝙"),
-            PieceKind::StandingStone => ColoredString::from("╳"),
-            PieceKind::CapStone => ColoredString::from(/*"♜"*/ "👑"),
+            PieceKind::Stone => String::from("🝙"),
+            PieceKind::StandingStone => String::from("╳"),
+            PieceKind::CapStone => String::from(/*"♜"*/ "👑"),
         }
     }
 }
 
 impl CLHumanDisplay for Position {
-    fn cl_display(&self) -> ColoredString {
+    fn cl_display(&self) -> String {
         let c: u8 = 65u8 + (self.col as u8);
-        format!("({}, {})", self.row, c as char).normal()
+        format!("({}, {})", self.row, c as char)
     }
 }
 
 impl CLHumanDisplay for Direction {
-    fn cl_display(&self) -> ColoredString {
+    fn cl_display(&self) -> String {
         match self {
-            Direction::North => ColoredString::from("upwards"),
-            Direction::South => ColoredString::from("downwards"),
-            Direction::East  => ColoredString::from("to the right"),
-            Direction::West  => ColoredString::from("to the left"),
+            Direction::North => String::from("upwards"),
+            Direction::South => String::from("downwards"),
+            Direction::East  => String::from("to the right"),
+            Direction::West  => String::from("to the left"),
         }
     }
 }
 
 impl CLHumanDisplay for Piece {
-    fn cl_display(&self) -> ColoredString {
+    fn cl_display(&self) -> String {
         match self.color {
-            Color::Red => self.kind.cl_display().red(),
-            Color::Blk => self.kind.cl_display().black(),
+            Color::Red => self.kind.cl_display().red().to_string(),
+            Color::Blk => self.kind.cl_display().black().to_string(),
         }
 
     }
@@ -63,27 +64,33 @@ impl CLHumanDisplay for Piece {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct BoardCell {
-    inner: Vec<Vec<ColoredString>>,
+    inner: Vec<Vec<String>>,
 }
 
-// TODO: CELL_WIDTH should depend on board size.
 // TODO: Should be odd.
+// TODO: Scale by max stack size!
+// TODO: Maybe add inner borders.
 const CELL_WIDTH: usize = 3;
 impl BoardCell {
+
     fn default() -> BoardCell {
-        BoardCell { inner: Vec::new() }
+        BoardCell { inner: vec![Vec::new()] }
     }
+
     fn empty() -> BoardCell {
-        BoardCell { inner: vec![vec![ColoredString::from(" "); CELL_WIDTH]; CELL_WIDTH] }
+        BoardCell { inner: vec![Self::empty_row(); CELL_WIDTH] }
     }
+
     fn straight() -> BoardCell {
-        BoardCell { inner: vec![vec!["-".bold(); CELL_WIDTH]] }
+        BoardCell { inner: vec![vec!["-".bold().to_string(); CELL_WIDTH]] }
     }
+
     fn pipe() -> BoardCell {
-        BoardCell { inner: vec![vec!["|".bold()]; CELL_WIDTH] }
+        BoardCell { inner: vec![vec!["|".bold().to_string()]; CELL_WIDTH] }
     }
+
     fn cross() -> BoardCell {
-        BoardCell { inner: vec![vec!["┼".bold()]] }
+        BoardCell { inner: vec![vec!["┼".bold().to_string()]] }
     }
 
     fn from(mut s: &Stack) -> BoardCell {
@@ -110,13 +117,19 @@ impl BoardCell {
         BoardCell { inner: content }
     }
 
-    // TODO: Solve string/colored_string conundrum.
     fn get_row(&self, i: usize) -> String {
-        assert!(i < self.inner.len());
-        self.inner[i].iter().fold(String::new(), |s1, s2| s1 + &s2.to_string())
+        if i < self.inner.len() {
+            self.inner[i].iter().fold(String::new(), |s1, s2| s1 + &s2)
+        } else {
+            String::new() // We're already fully printed.
+        }
     }
 
-    fn distribute_rows(rows: Vec<Vec<ColoredString>>) -> Vec<Vec<ColoredString>> {
+    fn empty_row() -> Vec<String> {
+        vec![String::from(" "); CELL_WIDTH]
+    }
+
+    fn distribute_rows(rows: Vec<Vec<String>>) -> Vec<Vec<String>> {
         assert!(rows.len() < CELL_WIDTH);
         let space_left_over = CELL_WIDTH - rows.len();
         let space_top = space_left_over / 2;
@@ -124,19 +137,18 @@ impl BoardCell {
             if ix > space_top && ix < space_top + rows.len() {
                 rows[ix - space_top].clone() // TODO: This clone is avoidable.
             } else {
-                vec![ColoredString::from(""); CELL_WIDTH]
+                Self::empty_row()
             }
         }).collect()
     }
 
-    fn transform_single_row_stack(s: Stack) -> Vec<ColoredString> {
+    fn transform_single_row_stack(s: Stack) -> Vec<String> {
         assert!(s.len() <= CELL_WIDTH);
-        let mut row = vec![ColoredString::from(" "); CELL_WIDTH];
+        let mut row = vec![String::from(" "); CELL_WIDTH];
         let leftover_space = CELL_WIDTH - s.len();
-        let space_right = leftover_space / 2;
-//        let mut i = space_right;
+        let space_left = leftover_space / 2;
         for (i, piece) in s.iter().enumerate() {
-            row[i] = ColoredString::from(piece.cl_display());
+            row[i] = piece.cl_display();
         }
         row
     }
@@ -145,50 +157,140 @@ impl BoardCell {
 #[derive(Debug, Clone)]
 pub(crate) struct CIBoardPrinter {
     board: RefCell<Vec<Vec<BoardCell>>>,
+    size: usize,
 }
 
 impl CIBoardPrinter {
+
+    fn header_row(&self) -> usize { 0 }
+    fn footer_row(&self) -> usize { self.size - 1 }
+    fn left_border(&self) -> usize { 0 }
+    fn right_boarder(&self) -> usize { self.size - 1 }
+
+    fn inner_range(&self) -> Range<usize> {
+        (1..(self.size - 1)) // exclude border/header/footer
+    }
+
+    fn full_range(&self) -> Range<usize> {
+        (0..self.size)
+    }
+
+    fn inner_to_pos(&self, row: usize, col: usize) -> Position {
+        Position::new(row - 1, col - 1)
+    }
+
     pub(crate) fn new(board_size: usize) -> CIBoardPrinter {
-        let mut board = vec![vec![BoardCell::default(); board_size + 2]; board_size + 2];
-        // Draw crosses in corners.
-        board[0][0] = BoardCell::cross();
-        board[board_size][0] = BoardCell::cross();
-        board[0][board_size] = BoardCell::cross();
-        board[board_size][board_size] = BoardCell::cross();
-        for i in 1..(board_size + 1) {
-            // Draw straight borders vertically and then horizontally.
-            board[1][i] = BoardCell::pipe();
-            board[board_size + 1][i] = BoardCell::pipe();
-            board[i][1] = BoardCell::straight();
-            board[i][board_size+1] = BoardCell::straight();
-            // Any other field is just empty.
-            for j in 1..(board_size + 1) {
-                board[i][j] = BoardCell::empty();
+        let size = board_size + 2;
+        let board = vec![vec![BoardCell::default(); size]; size];
+        let printer = CIBoardPrinter { board: RefCell::new(board), size };
+        let mut board = printer.board.borrow_mut();
+        board[printer.header_row()][printer.left_border()] = BoardCell::cross();
+        board[printer.footer_row()][printer.left_border()] = BoardCell::cross();
+        board[printer.header_row()][printer.right_boarder()] = BoardCell::cross();
+        board[printer.footer_row()][printer.right_boarder()] = BoardCell::cross();
+        for ix in printer.inner_range() {
+            board[printer.header_row()][ix] = BoardCell::straight();
+            board[printer.footer_row()][ix] = BoardCell::straight();
+            board[ix][printer.left_border()] = BoardCell::pipe();
+            board[ix][printer.right_boarder()] = BoardCell::pipe();
+            for j in printer.inner_range() {
+                board[ix][j] = BoardCell::empty();
             }
         }
-        CIBoardPrinter { board: RefCell::new(board) }
+        drop(board); // Drop borrow so we can move printer.
+        printer
+    }
+
+    fn print_header_footer(&self, cells: &Ref<Vec<Vec<BoardCell>>>, header: bool) -> String {
+        let row = if header { self.header_row() } else { self.footer_row() };
+        let mut accu = String::new();
+        for col in self.full_range() {
+            accu += &cells[row][col].get_row(0);
+        }
+        accu
     }
 
     pub(crate) fn print(&self, board: &Board) -> String {
         self.translate_board(board);
         let mut accu = String::new();
-        let inner = self.board.borrow();
-        for row in 0..board.size() {
-            for col in 0..board.size() {
-                for cell_row in 0..CELL_WIDTH {
-                    accu += &inner[row][col].get_row(cell_row);
+        let cells = self.board.borrow();
+        accu += &self.print_header_footer(&cells, true);
+        accu += "\n";
+        for row in self.inner_range() {
+            for cell_row in 0..CELL_WIDTH {
+                for col in self.full_range() {
+                    accu += &cells[row][col].get_row(cell_row);
                 }
+                accu += "\n";
             }
         }
+        accu += &self.print_header_footer(&cells, false);
         accu
     }
 
     fn translate_board(&self, board: &Board) {
-        let mut inner = self.board.borrow_mut();
-        for row in 0..board.size() {
-            for col in 0..board.size() {
-                inner[row+1][col+1] = BoardCell::from(&board[Position::new(row, col)])
+        let mut cells = self.board.borrow_mut();
+        for row in self.inner_range() {
+            for col in self.inner_range() {
+                cells[row][col] = BoardCell::from(&board[self.inner_to_pos(row, col)])
             }
         }
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::board::Board;
+    use super::CIBoardPrinter;
+    use colored::*;
+    use crate::board::piece::*;
+    use crate::board::Position;
+    use crate::player::Color;
+
+    fn setup(size: usize) -> (Board, CIBoardPrinter) {
+        (Board::new(size), CIBoardPrinter::new(size))
+    }
+
+    fn bold(s: &str) -> String {
+        s.chars().map(|c| c.to_string().bold().to_string()).collect()
+    }
+
+    #[test]
+    fn test_empty() {
+        let (board, printer) = setup(2);
+        let was = printer.print(&board);
+        let expected = vec![
+        bold("┼------┼"),
+        bold("|") + &"      " + &bold("|"),
+        bold("|") + &"      " + &bold("|"),
+        bold("|") + &"      " + &bold("|"),
+        bold("|") + &"      " + &bold("|"),
+        bold("|") + &"      " + &bold("|"),
+        bold("|") + &"      " + &bold("|"),
+        bold("┼------┼"),
+        ].join("\n");
+        assert_eq!(was, expected);
+    }
+
+    #[test]
+    fn test_single() {
+        let (mut board, printer) = setup(2);
+        board[Position::new(1,1)] += Stack::from(vec![Piece::new(PieceKind::Stone, Color::Red)]);
+        println!("{}", printer.print(&board));
+        panic!();
+        let was = printer.print(&board);
+        let expected = vec![
+            bold("┼------┼"),
+            bold("|") + &"      " + &bold("|"),
+            bold("|") + &"      " + &bold("|"),
+            bold("|") + &"      " + &bold("|"),
+            bold("|") + &"      " + &bold("|"),
+            bold("|") + &"      " + &bold("|"),
+            bold("|") + &"      " + &bold("|"),
+            bold("┼------┼"),
+        ].join("\n");
+        assert_eq!(was, expected);
     }
 }
