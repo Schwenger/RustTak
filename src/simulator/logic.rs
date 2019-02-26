@@ -129,12 +129,16 @@ impl Logic {
                     Direction::South => pos.row < v.len(),
                     Direction::West => pos.col < v.len(),
                 };
-                let all_comp = || {
+                let all_compatible = || {
                     let mut src = pos;
-                    if self.board[src].len() < *v.first().unwrap() {
+                    let original_stack = &self.board[src];
+                    if original_stack.len() < *v.first().unwrap() {
                         return false;
                     }
-                    let mut carried = self.board[src].peek_from_top(*v.first().unwrap());
+                    if original_stack.color().map(|c| c != mv.player).unwrap_or(false) {
+                        return false; // If there is a stack, it's color must be the player's.
+                    }
+                    let mut carried = original_stack.peek_from_top(*v.first().unwrap());
                     for n in &v[1..] {
                         let dst = src.go(dir);
                         if !self.board[dst].compatible_with(&carried) {
@@ -151,7 +155,7 @@ impl Logic {
                     && dbg!(!too_many())
                     && dbg!(color())
                     && dbg!(!oob())
-                    && dbg!(all_comp())
+                    && dbg!(all_compatible())
             }
         }
     }
