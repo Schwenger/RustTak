@@ -118,6 +118,7 @@ impl Logic {
             }
             Action::Slide(pos, dir, ref v) => {
                 let size = self.board_size; // Abbreviation
+                let v = v.as_ref().map(Vec::clone).unwrap_or_else(|| vec![self.board[pos].len()]);
                 let val_pos = || self.valid_pos(pos);
                 let empty = || v.is_empty();
                 let contains_0 = || v.iter().find(|n| **n == 0).is_some();
@@ -168,6 +169,7 @@ impl Logic {
                 self.board[pos] += piece;
             }
             Action::Slide(pos, dir, v) => {
+                let v = v.unwrap_or_else(|| vec![self.board[pos].len()]);
                 let mut src = pos;
                 for n in v {
                     let dst = src.go(dir);
@@ -362,7 +364,7 @@ mod tests {
         !  ! !
         ";
         let source = Position::new(0, 1);
-        let action = Action::Slide(source, Direction::West, vec![1]);
+        let action = Action::Slide(source, Direction::West, Some(vec![1]));
         assert!(!applicable(s, 3, action, Red));
     }
 
@@ -382,7 +384,7 @@ mod tests {
         ",
         );
         let source = Position::new(0, 1);
-        let action = Action::Slide(source, Direction::West, vec![1]);
+        let action = Action::Slide(source, Direction::West, Some(vec![1]));
         let (ml, oc) = apply(start, 3, action, Red);
         //        assert!(oc.is_none());
         let was = ml.peek();

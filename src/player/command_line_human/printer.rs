@@ -14,13 +14,14 @@ impl CLHumanDisplay for Action {
     fn cl_display(&self) -> String {
         match self {
             Action::Place(pos, kind) => format!("placed a {} at {}", pos.cl_display(), kind.cl_display()),
-            Action::Slide(src, dir, v) if v.len() == 1 => {
+            Action::Slide(src, dir, Some(v)) if v.len() == 1 => {
                 format!("moved {} pieces from {} {}", v[0], src.cl_display(), dir.cl_display())
             }
-            Action::Slide(src, dir, v) => {
+            Action::Slide(src, dir, Some(v)) => {
                 let takes = v.iter().map(|n| format!("{}", n)).collect::<Vec<String>>().join(", ");
                 format!("started sliding {} from {} taking {} pieces", dir.cl_display(), src.cl_display(), takes)
             }
+            Action::Slide(src, dir, None) => format!("moved the stack from {} {}", src.cl_display(), dir.cl_display()),
         }
     }
 }

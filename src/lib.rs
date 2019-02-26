@@ -3,6 +3,9 @@ use crate::player::Color;
 use crate::player::Player;
 use crate::simulator::Simulator;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod actions;
 mod board;
 mod player;

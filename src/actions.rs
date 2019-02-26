@@ -13,7 +13,8 @@ pub enum Action {
     /// carried over to the new field, i.e. if the original stack contains 4 pieces, all of them
     /// are supposed to be moved one to the right, and the top-most three one step further, then
     /// the `Action` should be: `Slide(source, Direction::East, vec![4,3]`
-    Slide(Position, Direction, Vec<usize>),
+    /// If the vec is empty, the entire stack is supposed to be moved.
+    Slide(Position, Direction, Option<Vec<usize>>),
     /// Contains the target position and the kind of piece that is supposed to be placed at the
     /// target.
     Place(Position, PieceKind),
