@@ -1,6 +1,6 @@
 use crate::actions::Action;
 use crate::board::{Board, Position};
-use crate::simulator::Outcome;
+use crate::simulator::game_over::Outcome;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::ops::Not;
 

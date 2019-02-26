@@ -1,7 +1,7 @@
 use super::{Color, Player};
 use crate::actions::Action;
 use crate::board::{Board, Position};
-use crate::simulator::{MatchResult, Outcome};
+use crate::simulator::game_over::{MatchResult, Outcome};
 use std::io::stdin;
 
 mod cli_parser;

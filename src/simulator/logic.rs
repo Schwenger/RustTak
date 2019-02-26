@@ -1,17 +1,17 @@
+use super::game_over::{MatchResult, Outcome};
 use crate::actions::{Action, Move};
 use crate::board::piece::{Piece, PieceKind};
 use crate::board::{Board, Direction, Position};
 use crate::player::Color;
-use crate::simulator::{MatchResult, Outcome};
 
 use std::collections::HashSet;
 
-pub(crate) struct MoveLogic {
+pub(crate) struct Logic {
     board: Board,
     red_pieces: PiecesStash,
     blk_pieces: PiecesStash,
     board_size: usize,
-    pub(crate) last_applied_move: Option<Move>,
+    last_applied_move: Option<Move>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,14 +34,14 @@ impl PiecesStash {
     }
 }
 
-enum MoveLogicError {
+enum LogicError {
     NotApplicable(Move),
 }
 
-impl MoveLogic {
-    pub(crate) fn new(size: usize) -> MoveLogic {
+impl Logic {
+    pub(crate) fn new(size: usize) -> Logic {
         let stash = PiecesStash::for_board_size(size);
-        MoveLogic {
+        Logic {
             board: Board::new(size),
             red_pieces: stash,
             blk_pieces: stash,
@@ -50,10 +50,10 @@ impl MoveLogic {
         }
     }
 
-    /// Create a MoveLogic for a given board.
+    /// Create an ActionLogic for a given board.
     /// Note it is assumed that the last applied move is `None` even if there is only one
     /// logical choice.
-    pub(crate) fn from_board(board: Board) -> MoveLogic {
+    pub(crate) fn from_board(board: Board) -> Logic {
         let mut red_stash = PiecesStash::for_board_size(board.size());
         let mut blk_stash = PiecesStash::for_board_size(board.size());
         use crate::board::piece::PieceKind;
@@ -68,7 +68,7 @@ impl MoveLogic {
             }
         }
         let size = board.size();
-        MoveLogic { board, red_pieces: red_stash, blk_pieces: blk_stash, board_size: size, last_applied_move: None }
+        Logic { board, red_pieces: red_stash, blk_pieces: blk_stash, board_size: size, last_applied_move: None }
     }
 
     pub(crate) fn peek(&self) -> &Board {
@@ -77,6 +77,10 @@ impl MoveLogic {
 
     pub(crate) fn first_turn(&mut self, pos: Position, c: Color) {
         self.apply(Move { player: !c, action: Action::Place(pos, PieceKind::Stone) });
+    }
+
+    pub(crate) fn last_applied_move(&mut self) -> Option<Move> {
+        self.last_applied_move.clone()
     }
 
     fn valid_pos(&self, pos: Position) -> bool {
@@ -288,16 +292,16 @@ mod tests {
         board
     }
 
-    fn apply(b: &str, width: usize, action: Action, color: Color) -> (MoveLogic, Option<Outcome>) {
+    fn apply(b: &str, width: usize, action: Action, color: Color) -> (Logic, Option<Outcome>) {
         let board = parse(width, b);
-        let mut ml = MoveLogic::from_board(board);
+        let mut ml = Logic::from_board(board);
         let oc = ml.apply(Move { action, player: color });
         (ml, oc)
     }
 
     fn applicable(b: &str, width: usize, action: Action, color: Color) -> bool {
         let board = parse(width, b);
-        let ml = MoveLogic::from_board(board);
+        let ml = Logic::from_board(board);
         ml.applicable(&Move { action, player: color })
     }
 

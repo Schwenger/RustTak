@@ -1,22 +1,14 @@
 use crate::actions::Move;
-use crate::board::Board;
-use crate::move_logic::MoveLogic;
 use crate::player::{Color, Player};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Outcome {
-    pub result: MatchResult,
-    pub board: Board,
-}
+pub mod game_over;
+mod logic;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum MatchResult {
-    Winner(Color),
-    Tie,
-}
+use self::game_over::Outcome;
+use self::logic::Logic;
 
 pub struct Simulator<R, B> {
-    logic: MoveLogic,
+    logic: Logic,
     red: R,
     blk: B,
 }
@@ -24,7 +16,7 @@ pub struct Simulator<R, B> {
 impl<R: Player, B: Player> Simulator<R, B> {
     /// Red always starts!
     pub fn new(red: R, blk: B, size: usize) -> Simulator<R, B> {
-        Simulator { logic: MoveLogic::new(size), red, blk }
+        Simulator { logic: Logic::new(size), red, blk }
     }
 
     pub fn start(mut self) -> Outcome {
@@ -48,7 +40,7 @@ impl<R: Player, B: Player> Simulator<R, B> {
     }
 
     fn next_move(&mut self, c: Color) -> Option<Outcome> {
-        let last = self.logic.last_applied_move.as_ref().map(|m| m.action.clone());
+        let last = self.logic.last_applied_move().map(|m| m.action);
         let action = match c {
             Color::Red => self.red.action_for(self.logic.peek(), last),
             Color::Blk => self.blk.action_for(self.logic.peek(), last),
