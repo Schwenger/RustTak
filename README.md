@@ -23,4 +23,4 @@ Maximilian Schwenger ([email](mailto:mail@mschwenger.de), [github](https://githu
 # Tak in real life
 I do not own any rights to this game, nor did I contribute in its development.
 Please refer to [kickstarter](https://www.kickstarter.com/projects/cheapassgames/tak-a-beautiful-game) to support the game.
-Also, check out the King Killer Chronicles if you dare to have not already! ([link](http://www.patrickrothfuss.com/content/books.asp)). 
+Also, check out the King Killer Chronicles if you have not already! ([link](http://www.patrickrothfuss.com/content/books.asp)). 
