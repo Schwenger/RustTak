@@ -61,48 +61,44 @@ impl Stack {
         self.content.iter()
     }
 
-    pub(crate) fn empty() -> Stack {
-        Stack { content: Vec::new() }
+    pub fn is_atomic(&self) -> bool {
+        self.content.len() == 1
     }
 
-    pub(crate) fn is_road(&self) -> bool {
+    pub fn is_road(&self) -> bool {
         self.top().map(|p| p.kind.road()).unwrap_or(false)
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.content.is_empty()
     }
 
-    pub(crate) fn compatible_with(&self, other: &Stack) -> bool {
+    pub fn compatible_with(&self, other: &Stack) -> bool {
         self.is_stackable() || self.is_flattenable() && other.is_flattening()
     }
 
-    pub(crate) fn take_off(&mut self, n: usize) -> Stack {
+    pub fn color(&self) -> Option<Color> {
+        self.top().map(|p| p.color)
+    }
+
+    pub fn take_off(&mut self, n: usize) -> Stack {
         self.content.split_off(self.content.len() - n).into()
     }
 
-    pub(crate) fn peek_from_top(&self, n: usize) -> Stack {
+    pub fn empty() -> Stack {
+        Stack { content: Vec::new() }
+    }
+
+    pub fn peek_from_top(&self, n: usize) -> Stack {
         let new_content = self.content.split_at(self.content.len() - n).1;
         Vec::from(new_content).into()
     }
 
-    pub(crate) fn color(&self) -> Option<Color> {
-        self.top().map(|p| p.color)
-    }
-
-    pub(crate) fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.content.len()
     }
 
-    fn top(&self) -> Option<&Piece> {
-        self.content.last()
-    }
-
-    fn is_atomic(&self) -> bool {
-        self.content.len() == 1
-    }
-
-    fn is_flattening(&self) -> bool {
+    pub fn is_flattening(&self) -> bool {
         if self.content.len() == 1 {
             self.top().map(|t| t.kind == PieceKind::CapStone).unwrap_or(false)
         } else {
@@ -110,15 +106,15 @@ impl Stack {
         }
     }
 
-    fn is_flattenable(&self) -> bool {
+    pub fn is_flattenable(&self) -> bool {
         self.top().map(|p| p.kind.flattenable()).unwrap_or(true)
     }
 
-    fn is_stackable(&self) -> bool {
+    pub fn is_stackable(&self) -> bool {
         self.top().map(|p| p.kind.stackable()).unwrap_or(true)
     }
 
-    fn flatten(&mut self) {
+    pub fn flatten(&mut self) {
         if let Some(top) = self.top() {
             let new_top = match top.kind {
                 PieceKind::StandingStone => Piece { kind: PieceKind::Stone, color: top.color },
@@ -136,6 +132,10 @@ impl Stack {
             let tail = &self.content[0..(self.len() - 1)];
             tail.iter().all(|p| PieceKind::Stone == p.kind)
         }
+    }
+
+    fn top(&self) -> Option<&Piece> {
+        self.content.last()
     }
 }
 

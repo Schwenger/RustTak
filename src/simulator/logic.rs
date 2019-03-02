@@ -34,10 +34,6 @@ impl PiecesStash {
     }
 }
 
-enum LogicError {
-    NotApplicable(Move),
-}
-
 impl Logic {
     pub(crate) fn new(size: usize) -> Logic {
         let stash = PiecesStash::for_board_size(size);
@@ -53,7 +49,7 @@ impl Logic {
     /// Create an ActionLogic for a given board.
     /// Note it is assumed that the last applied move is `None` even if there is only one
     /// logical choice.
-    pub(crate) fn from_board(board: Board) -> Logic {
+    fn from_board(board: Board) -> Logic {
         let mut red_stash = PiecesStash::for_board_size(board.size());
         let mut blk_stash = PiecesStash::for_board_size(board.size());
         use crate::board::piece::PieceKind;
@@ -329,7 +325,7 @@ mod tests {
                 assert_eq!(stack, &Stack::empty());
             }
         }
-        //        assert!(oc.is_none())
+        assert!(oc.is_none())
     }
 
     #[test]
@@ -386,7 +382,7 @@ mod tests {
         let source = Position::new(0, 1);
         let action = Action::Slide(source, Direction::West, Some(vec![1]));
         let (ml, oc) = apply(start, 3, action, Red);
-        //        assert!(oc.is_none());
+        assert!(oc.is_none());
         let was = ml.peek();
         assert_eq!(was, &expected);
     }

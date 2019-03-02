@@ -1,8 +1,16 @@
 [package]
-name = "rust_tak"
+name = "tak_simulator"
 version = "0.1.0"
 authors = ["Maximilian Schwenger <mail@mschwenger.de>"]
 edition = "2018"
+
+[lib]
+name = "tak_simulator"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tak_simulator_main"
+path = "src/app/bin.rs"
 
 [dependencies]
 colored = "1.7.0"

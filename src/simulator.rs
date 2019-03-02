@@ -6,6 +6,7 @@ mod logic;
 
 use self::game_over::Outcome;
 use self::logic::Logic;
+use crate::player::PlayerBuilder;
 
 pub struct Simulator<R, B> {
     logic: Logic,
@@ -15,7 +16,13 @@ pub struct Simulator<R, B> {
 
 impl<R: Player, B: Player> Simulator<R, B> {
     /// Red always starts!
-    pub fn new(red: R, blk: B, size: usize) -> Simulator<R, B> {
+    pub fn new<X, Y>(red: X, blk: Y, size: usize) -> Simulator<R, B>
+    where
+        X: PlayerBuilder<R>,
+        Y: PlayerBuilder<B>,
+    {
+        let red = red.setup(size, Color::Red, true);
+        let blk = blk.setup(size, Color::Blk, false);
         Simulator { logic: Logic::new(size), red, blk }
     }
 

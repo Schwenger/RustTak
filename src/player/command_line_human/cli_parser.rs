@@ -2,10 +2,8 @@ use crate::actions::Action;
 use crate::board::Position;
 
 use crate::board::piece::PieceKind;
-use crate::board::piece::PieceKind::Stone;
 use crate::board::Direction;
 use regex::Regex;
-use std::hint::unreachable_unchecked;
 
 pub(crate) struct CLIParser {}
 
@@ -27,7 +25,7 @@ impl CLIParser {
     }
 
     fn slide(tokens: &[&str]) -> Result<Action> {
-        unimplemented!()
+        Self::exact_slide(tokens)
     }
 
     fn exact_slide(tokens: &[&str]) -> Result<Action> {
@@ -126,7 +124,7 @@ impl CLIParser {
         }
         let s = s.trim().to_lowercase();
 
-        let numbers = Self::extract_numbers(&s, 2);
+        let numbers = Self::extract_numbers(&s);
         if numbers.len() == 2 {
             let best_guess = Some(Position::new(numbers[0], numbers[1]));
             Err(CLIParserError::new("I'm not sure I understood that correctly.", best_guess))
@@ -145,7 +143,7 @@ impl CLIParser {
             .next()
     }
 
-    fn extract_numbers(s: &String, n: u32) -> Vec<usize> {
+    fn extract_numbers(s: &String) -> Vec<usize> {
         lazy_static! {
             static ref regex: Regex = Regex::new(r#"\d*"#).unwrap();
         }

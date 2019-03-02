@@ -19,6 +19,11 @@ pub struct CommandLineHuman {
 }
 
 impl CommandLineHuman {
+    pub(crate) fn new(name: String, board_size: usize, color: Color, first: bool) -> CommandLineHuman {
+        let printer = CIBoardPrinter::new(board_size);
+        CommandLineHuman { name, printer, color, first, opponent: String::from("Karen") }
+    }
+
     fn read_yes_no() -> bool {
         let mut response = String::new();
         let _ = stdin().read_line(&mut response);
@@ -57,14 +62,6 @@ impl CommandLineHuman {
 }
 
 impl Player for CommandLineHuman {
-    fn setup(board_size: usize, color: Color, first: bool) -> Self {
-        println!("Welcome to Tak!\nWhat's your name?");
-        let mut name = String::new();
-        let _ = stdin().read_line(&mut name);
-        let printer = CIBoardPrinter::new(board_size);
-        CommandLineHuman { name, printer, color, first, opponent: String::from("Karen") }
-    }
-
     fn welcome(&mut self, opponent: &String) {
         println!("{}, you'll be facing {} today.", self.name, opponent);
         println!("You will go {}.", if self.first { "first" } else { "second" });

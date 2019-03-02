@@ -47,10 +47,6 @@ impl Board {
         Board { board: vec![vec![Stack::empty(); size]; size] }
     }
 
-    pub(crate) fn empty(&mut self, pos: Position) {
-        self[pos] = Stack::empty();
-    }
-
     pub fn valid_pos(&self, pos: Position) -> bool {
         let n = self.board.len();
         pos.row < n && pos.col < n
