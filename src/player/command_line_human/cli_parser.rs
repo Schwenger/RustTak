@@ -10,7 +10,7 @@ pub(crate) struct CLIParser {}
 pub(crate) type Result<T> = std::result::Result<T, CLIParserError<T>>;
 
 impl CLIParser {
-    pub(crate) fn action(s: &String) -> Result<Action> {
+    pub(crate) fn action(s: &str) -> Result<Action> {
         let s = s.trim().to_lowercase();
         let tokens: Vec<&str> = s.split_whitespace().collect();
         if tokens.is_empty() {
@@ -118,7 +118,7 @@ impl CLIParser {
         }
     }
 
-    pub(crate) fn position(s: &String) -> Result<Position> {
+    pub(crate) fn position(s: &str) -> Result<Position> {
         if let Some(pos) = Self::exact_position(s) {
             return Ok(pos);
         }
@@ -133,7 +133,7 @@ impl CLIParser {
         }
     }
 
-    fn exact_position(s: &String) -> Option<Position> {
+    fn exact_position(s: &str) -> Option<Position> {
         lazy_static! {
             static ref regex: Regex = Regex::new(r#"\(\s*\d+\s*,\s*\d+\s*\)"#).expect("Meh");
         }
@@ -143,7 +143,7 @@ impl CLIParser {
             .next()
     }
 
-    fn extract_numbers(s: &String) -> Vec<usize> {
+    fn extract_numbers(s: &str) -> Vec<usize> {
         lazy_static! {
             static ref regex: Regex = Regex::new(r#"\d*"#).unwrap();
         }

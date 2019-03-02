@@ -27,6 +27,7 @@ impl CommandLineHuman {
     fn read_yes_no() -> bool {
         let mut response = String::new();
         let _ = stdin().read_line(&mut response);
+        let response = response.as_str().trim();
         match response.to_lowercase().as_str() {
             "yes" | "y" | "si" | "ja" | "yeah" | "yea" | "sure" | "ofc" | "what else?" => true,
             "no" | "n" | "nope" | "nein" | "nah" | "nay" | "not at all" | "niet" | "u mad?" => false,
@@ -39,12 +40,13 @@ impl CommandLineHuman {
 
     fn ask_in_loop<T: CLHumanDisplay, F>(&self, f: F) -> T
     where
-        F: Fn(&String) -> Result<T, CLIParserError<T>>,
+        F: Fn(&str) -> Result<T, CLIParserError<T>>,
     {
         loop {
             let mut response = String::new();
             let _ = stdin().read_line(&mut response);
-            match f(&response) {
+            let response = response.as_str().trim();
+            match f(response) {
                 Ok(value) => return value,
                 Err(e) => {
                     println!("{}", e.help);

@@ -19,6 +19,7 @@ impl HumanPlayer {
         let mut player = HumanPlayer { name: String::new() };
         println!("Welcome to Tak!\nWhat's your name?");
         let _ = stdin().read_line(&mut player.name);
+        player.name = player.name.trim().to_string();
         player
     }
 
