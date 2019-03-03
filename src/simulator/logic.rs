@@ -118,8 +118,17 @@ impl Logic {
                 let val_pos = || self.valid_pos(pos);
                 let empty = || v.is_empty();
                 let contains_0 = || v.iter().find(|n| **n == 0).is_some();
-                let too_many = || self.board_size < v.iter().sum();
-                let color = || self.board[pos].color().unwrap() == mv.player;
+                let decreasing = || {
+                    let mut last = v.first().unwrap();
+                    for current in &v[1..] {
+                        if current >= last {
+                            return false;
+                        }
+                        last = current;
+                    }
+                    true
+                };
+                let color = || self.board[pos].color().map(|c| c == mv.player).unwrap_or(true);
                 let oob = || match dir {
                     Direction::North => pos.row + v.len() > size,
                     Direction::East => pos.col + v.len() > size,
@@ -135,24 +144,19 @@ impl Logic {
                     if original_stack.color().map(|c| c != mv.player).unwrap_or(false) {
                         return false; // If there is a stack, it's color must be the player's.
                     }
-                    let mut carried = original_stack.peek_from_top(*v.first().unwrap());
-                    for n in &v[1..] {
+                    let mut full = original_stack.clone();
+                    for n in &v {
                         let dst = src.go(dir);
+                        let carried = full.peek_from_top(*n);
                         if !self.board[dst].compatible_with(&carried) {
                             return false;
                         }
                         src = dst;
-                        carried = carried.peek_from_top(*n);
+                        full = carried;
                     }
                     true
                 };
-                dbg!(val_pos())
-                    && dbg!(!empty())
-                    && dbg!(!contains_0())
-                    && dbg!(!too_many())
-                    && dbg!(color())
-                    && dbg!(!oob())
-                    && dbg!(all_compatible())
+                val_pos() && !empty() && !contains_0() && decreasing() && color() && !oob() && all_compatible()
             }
         }
     }
@@ -223,8 +227,14 @@ impl Logic {
 
         // Naive approach:
         let mut closed = HashSet::new();
-        let mut frontier: HashSet<Position> =
-            (0..self.board_size).map(|ix| vec![Position::new(0, ix), Position::new(ix, 0)]).flatten().collect();
+        let mut frontier: HashSet<Position> = (0..self.board_size)
+            .map(|ix| match dir {
+                Direction::North => Position::new(0, ix),
+                Direction::South => Position::new(self.board.size() - 1, ix),
+                Direction::East => Position::new(ix, 0),
+                Direction::West => Position::new(ix, self.board.size()),
+            })
+            .collect();
 
         while !frontier.is_empty() {
             frontier = frontier
@@ -282,14 +292,18 @@ mod tests {
     }
 
     fn parse(width: usize, s: &str) -> Board {
-        let mut row = 0;
+        let mut row = width; // Row 0 is supposed to be the last row.
+        let mut col = 0;
         let mut board = Board::new(width);
-        for (ix, stack) in s.split_whitespace().map(parse_single).enumerate() {
-            if ix == width {
-                row += 1;
+        for stack in s.split_whitespace().map(parse_single) {
+            if !stack.is_empty() {
+                board[Position::new(row - 1, col)] = stack;
             }
-            let col = ix % width;
-            board[Position::new(row, col)] = stack;
+            col += 1;
+            if col == width {
+                col = 0;
+                row -= 1;
+            }
         }
         board
     }
@@ -335,7 +349,7 @@ mod tests {
         !  ! !
         !  ! !
         ";
-        let target = Position::new(0, 0);
+        let target = Position::new(2, 0);
         let action = Action::Place(target, PieceKind::Stone);
         assert!(!applicable(s, 3, action, Red));
     }
@@ -359,7 +373,7 @@ mod tests {
         !  ! !
         !  ! !
         ";
-        let source = Position::new(0, 1);
+        let source = Position::new(2, 1);
         let action = Action::Slide(source, Direction::West, Some(vec![1]));
         assert!(!applicable(s, 3, action, Red));
     }
@@ -379,11 +393,62 @@ mod tests {
         !    ! !
         ",
         );
-        let source = Position::new(0, 1);
+        let source = Position::new(2, 1);
         let action = Action::Slide(source, Direction::West, Some(vec![1]));
         let (ml, oc) = apply(start, 3, action, Red);
         assert!(oc.is_none());
         let was = ml.peek();
         assert_eq!(was, &expected);
+    }
+
+    #[test]
+    fn test_apply_slide() {
+        let start = "\
+        !        !  ! !
+        !        !  ! !
+        RSBSRSRX RS ! !
+        !        !  ! !
+        ";
+        let expected = parse(
+            4,
+            "\
+        !  !    !    !
+        !  !    !    !
+        RS RSBS RSRX !
+        !  !    !    !
+        ",
+        );
+        let source = Position::new(1, 0);
+        let action = Action::Slide(source, Direction::East, Some(vec![3, 2]));
+        let (ml, oc) = apply(start, 4, action, Red);
+        assert!(oc.is_none());
+        let was = ml.peek();
+        assert_eq!(was, &expected);
+    }
+
+    #[test]
+    fn test_apply_slide_invalid_non_dec() {
+        let start = "\
+        !        !  ! !
+        !        !  ! !
+        RSBSRSRX RS ! !
+        !        !  ! !
+        ";
+        let source = Position::new(1, 0);
+        let action = Action::Slide(source, Direction::East, Some(vec![3, 3]));
+        assert!(!applicable(start, 4, action, Red));
+    }
+
+    #[test]
+    fn test_apply_slide_invalid_too_many() {
+        let start = "\
+        !        !  ! !
+        !        !  ! !
+        RSBSRSRX RS ! !
+        !        !  ! !
+        ";
+        let source = Position::new(1, 0);
+        let action = Action::Slide(source, Direction::East, Some(vec![5, 1]));
+        assert!(!applicable(start, 4, action, Red));
     }
 }
