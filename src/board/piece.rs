@@ -21,7 +21,7 @@ pub enum PieceKind {
 }
 
 impl PieceKind {
-    fn stackable(&self) -> bool {
+    fn stackable(self) -> bool {
         match self {
             PieceKind::Stone => true,
             PieceKind::StandingStone => false,
@@ -29,7 +29,7 @@ impl PieceKind {
         }
     }
 
-    fn road(&self) -> bool {
+    fn road(self) -> bool {
         match self {
             PieceKind::Stone => true,
             PieceKind::StandingStone => false,
@@ -37,7 +37,7 @@ impl PieceKind {
         }
     }
 
-    fn flattenable(&self) -> bool {
+    fn flattenable(self) -> bool {
         match self {
             PieceKind::StandingStone => true,
             PieceKind::CapStone => false,

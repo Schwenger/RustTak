@@ -64,10 +64,10 @@ impl CommandLineHuman {
 }
 
 impl Player for CommandLineHuman {
-    fn welcome(&mut self, opponent: &String) {
+    fn welcome(&mut self, opponent: &str) {
         println!("{}, you'll be facing {} today.", self.name, opponent);
         println!("You will go {}.", if self.first { "first" } else { "second" });
-        self.opponent = opponent.clone();
+        self.opponent = String::from(opponent);
     }
 
     fn action_for(&mut self, board: &Board, opponent_action: Option<Action>) -> Action {

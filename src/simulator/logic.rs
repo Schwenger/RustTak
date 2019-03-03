@@ -117,7 +117,7 @@ impl Logic {
                 let v = v.as_ref().map(Vec::clone).unwrap_or_else(|| vec![self.board[pos].len()]);
                 let val_pos = || self.valid_pos(pos);
                 let empty = || v.is_empty();
-                let contains_0 = || v.iter().find(|n| **n == 0).is_some();
+                let contains_0 = || v.iter().any(|n| *n == 0);
                 let decreasing = || {
                     let mut last = v.first().unwrap();
                     for current in &v[1..] {

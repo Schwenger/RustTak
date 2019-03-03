@@ -61,8 +61,8 @@ impl CLIParser {
                 }
             })
             .next()
-            .map(|a| Ok(a))
-            .unwrap_or(Err(CLIParserError::new("I don't understand...", None)))
+            .map(Ok)
+            .unwrap_or_else(|| Err(CLIParserError::new("I don't understand...", None)))
     }
 
     fn number_list(s: &str) -> Vec<usize> {

@@ -39,7 +39,7 @@ pub trait PlayerBuilder<T: Player>: Sized {
 }
 
 pub trait Player: Clone {
-    fn welcome(&mut self, opponent: &String);
+    fn welcome(&mut self, opponent: &str);
     fn action_for(&mut self, board: &Board, opponent_action: Option<Action>) -> Action;
     fn first_action(&mut self, board: &Board) -> Position;
     fn accept_outcome(&mut self, outcome: &Outcome);
