@@ -21,7 +21,6 @@ pub enum PieceKind {
 }
 
 impl PieceKind {
-
     fn stackable(self) -> bool {
         match self {
             PieceKind::Stone => true,
@@ -170,8 +169,7 @@ impl From<Vec<Piece>> for Stack {
 
 impl From<Piece> for Stack {
     fn from(p: Piece) -> Stack {
-        let res = Stack { content: vec![p] };
-        res
+        Stack { content: vec![p] }
     }
 }
 

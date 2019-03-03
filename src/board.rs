@@ -3,11 +3,10 @@ mod position;
 
 use self::piece::Stack;
 pub use self::position::Position;
-use std::ops::Index;
 use crate::board::piece::Piece;
-use crate::player::Color;
 use crate::board::piece::PieceKind;
-
+use crate::player::Color;
+use std::ops::Index;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PiecesStash {
@@ -50,18 +49,13 @@ impl Index<Position> for Board {
 }
 
 impl Board {
-
     fn mut_pos(&mut self, pos: Position) -> &mut Stack {
         &mut self.board[pos.row][pos.col]
     }
 
     pub fn new(size: usize) -> Board {
         let stash = PiecesStash::for_board_size(size);
-        Board {
-            board: vec![vec![Stack::empty(); size]; size],
-            red_pieces: stash.clone(),
-            blk_pieces: stash,
-        }
+        Board { board: vec![vec![Stack::empty(); size]; size], red_pieces: stash, blk_pieces: stash }
     }
 
     pub fn valid_pos(&self, pos: Position) -> bool {

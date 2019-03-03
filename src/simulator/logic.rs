@@ -13,10 +13,7 @@ pub(crate) struct Logic {
 
 impl Logic {
     pub(crate) fn new(size: usize) -> Logic {
-        Logic {
-            board: Board::new(size),
-            last_applied_move: None,
-        }
+        Logic { board: Board::new(size), last_applied_move: None }
     }
 
     /// Create an ActionLogic for a given board.
@@ -180,7 +177,7 @@ impl Logic {
             .collect();
 
         while !frontier.is_empty() {
-            frontier = frontier.difference(&closed).map(|p| *p).collect();
+            frontier = frontier.difference(&closed).cloned().collect();
             closed.extend(frontier.iter());
             frontier = frontier.drain().flat_map(collect_neighbours).filter(qualifies).collect();
             if frontier.iter().any(is_goal) {
@@ -233,7 +230,7 @@ mod tests {
         let mut board = Board::new(width);
         for stack in s.split_whitespace().map(parse_single) {
             if !stack.is_empty() {
-                board.set_forcefully(Position::new(row-1, col), stack);
+                board.set_forcefully(Position::new(row - 1, col), stack);
             }
             col += 1;
             if col == width {
