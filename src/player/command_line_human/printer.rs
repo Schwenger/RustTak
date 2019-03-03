@@ -286,7 +286,8 @@ mod tests {
     #[test]
     fn test_single() {
         let (mut board, printer) = setup(2);
-        board[Position::new(1, 1)] += Stack::from(vec![Piece::new(PieceKind::Stone, Color::Red)]);
+        let stack = Stack::from(vec![Piece::new(PieceKind::Stone, Color::Red)]);
+        board.set_forcefully(Position::new(1, 1), stack);
         println!("{}", printer.print(&board));
         let was = printer.print(&board);
         let expected = vec![

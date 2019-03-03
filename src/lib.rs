@@ -2,9 +2,9 @@
 extern crate lazy_static;
 
 mod actions;
-mod board;
 mod simulator;
 mod test_util;
 
 pub mod player;
+pub mod board;
 pub use simulator::Simulator;

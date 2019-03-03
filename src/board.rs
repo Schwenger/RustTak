@@ -1,39 +1,46 @@
 pub(crate) mod piece;
+mod position;
 
 use self::piece::Stack;
-use std::ops::{Index, IndexMut};
+pub use self::position::Position;
+use std::ops::Index;
+use crate::board::piece::Piece;
+use crate::player::Color;
+use crate::board::piece::PieceKind;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Position {
-    pub row: usize,
-    pub col: usize,
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct PiecesStash {
+    stones: u16,
+    caps: u16,
 }
 
-impl Position {
-    pub fn new(row: usize, col: usize) -> Position {
-        Position { row, col }
-    }
-
-    pub(crate) fn go(self, dir: Direction) -> Position {
-        match dir {
-            Direction::North => Position { row: self.row + 1, col: self.col },
-            Direction::South => Position { row: self.row - 1, col: self.col },
-            Direction::East => Position { row: self.row, col: self.col + 1 },
-            Direction::West => Position { row: self.row, col: self.col - 1 },
-        }
+impl PiecesStash {
+    pub(crate) fn for_board_size(n: usize) -> PiecesStash {
+        let (stones, caps) = match n {
+            3 => (10, 0),
+            4 => (15, 0),
+            5 => (21, 1),
+            6 => (30, 1),
+            8 => (50, 2),
+            n => ((n as f32).powf(1.88) as u16, (n / 4) as u16), // The first rule seems about right, the second one not so much.
+        };
+        PiecesStash { stones, caps }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
     board: Vec<Vec<Stack>>,
+    red_pieces: PiecesStash,
+    blk_pieces: PiecesStash,
 }
 
-impl IndexMut<Position> for Board {
-    fn index_mut(&mut self, pos: Position) -> &mut Stack {
-        &mut self.board[pos.row][pos.col]
-    }
-}
+//impl IndexMut<Position> for Board {
+//    fn index_mut(&mut self, pos: Position) -> &mut Stack {
+//        &mut self.board[pos.row][pos.col]
+//    }
+//}
 
 impl Index<Position> for Board {
     type Output = Stack;
@@ -43,8 +50,18 @@ impl Index<Position> for Board {
 }
 
 impl Board {
-    pub(crate) fn new(size: usize) -> Board {
-        Board { board: vec![vec![Stack::empty(); size]; size] }
+
+    fn mut_pos(&mut self, pos: Position) -> &mut Stack {
+        &mut self.board[pos.row][pos.col]
+    }
+
+    pub fn new(size: usize) -> Board {
+        let stash = PiecesStash::for_board_size(size);
+        Board {
+            board: vec![vec![Stack::empty(); size]; size],
+            red_pieces: stash.clone(),
+            blk_pieces: stash,
+        }
     }
 
     pub fn valid_pos(&self, pos: Position) -> bool {
@@ -52,8 +69,57 @@ impl Board {
         pos.row < n && pos.col < n
     }
 
+    fn piece_count_mut(&mut self, c: Color, kind: PieceKind) -> &mut u16 {
+        match (c, kind) {
+            (Color::Blk, PieceKind::CapStone) => &mut self.blk_pieces.caps,
+            (Color::Red, PieceKind::CapStone) => &mut self.red_pieces.caps,
+            (Color::Blk, _) => &mut self.blk_pieces.stones,
+            (Color::Red, _) => &mut self.red_pieces.stones,
+        }
+    }
+
+    pub fn piece_count(&self, c: Color, kind: PieceKind) -> u16 {
+        match (c, kind) {
+            (Color::Blk, PieceKind::CapStone) => self.blk_pieces.caps,
+            (Color::Red, PieceKind::CapStone) => self.red_pieces.caps,
+            (Color::Blk, _) => self.blk_pieces.stones,
+            (Color::Red, _) => self.red_pieces.stones,
+        }
+    }
+
+    /// Places `piece` at the specified position.
+    /// Panics if the position is invalid, occupied, or the player does not have a
+    /// suitable piece left in their stash.
+    pub fn place(&mut self, piece: Piece, at: Position) {
+        assert!(self.valid_pos(at));
+        assert!(self[at].is_empty());
+        let left = self.piece_count_mut(piece.color, piece.kind);
+        assert!(*left > 0);
+        *left -= 1;
+        *self.mut_pos(at) = Stack::from(piece);
+    }
+
+    /// Slides the `n` topmost pieces from `src` in `to` direction.
+    /// Panics if:
+    /// * `src` is not valid
+    /// * the position in `to` direction of `src` does not exist
+    /// * there are less than `n` pieces on `src`
+    /// * the target position is occupied by a stack incompatible with the slid pieces.
+    pub fn slide(&mut self, src: Position, to: Direction, n: usize) {
+        let carried = self.mut_pos(src).take_off(n);
+        *self.mut_pos(src.go(to)) += carried;
+    }
+
     pub fn size(&self) -> usize {
         self.board.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_forcefully(&mut self, pos: Position, stack: Stack) {
+        for piece in stack.iter() {
+            *self.piece_count_mut(piece.color, piece.kind) -= 1;
+        }
+        *self.mut_pos(pos) = stack;
     }
 }
 
