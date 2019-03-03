@@ -115,6 +115,7 @@ impl Logic {
             Action::Slide(pos, dir, ref v) => {
                 let size = self.board_size; // Abbreviation
                 let v = v.as_ref().map(Vec::clone).unwrap_or_else(|| vec![self.board[pos].len()]);
+
                 let val_pos = || self.valid_pos(pos);
                 let empty = || v.is_empty();
                 let contains_0 = || v.iter().any(|n| *n == 0);
@@ -224,6 +225,10 @@ impl Logic {
             }
             res
         };
+        let qualifies = |p: &Position| {
+            let stack = &self.board[*p];
+            stack.is_road() && stack.color().map(|k| k == c).unwrap_or(false)
+        };
 
         // Naive approach:
         let mut closed = HashSet::new();
@@ -232,24 +237,18 @@ impl Logic {
                 Direction::North => Position::new(0, ix),
                 Direction::South => Position::new(self.board.size() - 1, ix),
                 Direction::East => Position::new(ix, 0),
-                Direction::West => Position::new(ix, self.board.size()),
+                Direction::West => Position::new(ix, self.board.size() - 1),
             })
+            .filter(qualifies)
             .collect();
 
         while !frontier.is_empty() {
-            frontier = frontier
-                .drain()
-                .flat_map(collect_neighbours)
-                .filter(|p| {
-                    let stack = &self.board[*p];
-                    stack.is_road() && stack.color().map(|k| k == c).unwrap_or(false)
-                })
-                .collect();
+            frontier = frontier.difference(&closed).map(|p| *p).collect();
+            closed.extend(frontier.iter());
+            frontier = frontier.drain().flat_map(collect_neighbours).filter(qualifies).collect();
             if frontier.iter().any(is_goal) {
                 return true;
             }
-            frontier.difference(&closed);
-            closed.extend(frontier.iter());
         }
         false
     }
@@ -402,6 +401,31 @@ mod tests {
     }
 
     #[test]
+    fn test_apply_move_on_wall() {
+        let start = "\
+        RX RC ! ! !
+        !  !  ! ! !
+        !  !  ! ! !
+        !  !  ! ! !
+        ";
+        let expected = parse(
+            5,
+            "\
+        RSRC ! ! ! !
+        !    ! ! ! !
+        !    ! ! ! !
+        !    ! ! ! !
+        ",
+        );
+        let source = Position::new(4, 1);
+        let action = Action::Slide(source, Direction::West, Some(vec![1]));
+        let (ml, oc) = apply(start, 5, action, Red);
+        assert!(oc.is_none());
+        let was = ml.peek();
+        assert_eq!(was, &expected);
+    }
+
+    #[test]
     fn test_apply_slide() {
         let start = "\
         !        !  ! !
@@ -450,5 +474,35 @@ mod tests {
         let source = Position::new(1, 0);
         let action = Action::Slide(source, Direction::East, Some(vec![5, 1]));
         assert!(!applicable(start, 4, action, Red));
+    }
+
+    #[test]
+    fn test_game_over() {
+        let start = "\
+        !          !  ! ! !
+        !          !  ! ! !
+        !          !  ! ! !
+        RSRSRSRSRC BS ! ! !
+        !          !  ! ! !
+        ";
+        let expected = parse(
+            5,
+            "\
+        !  !    !  !  !
+        !  !    !  !  !
+        !  !    !  !  !
+        RS BSRS RS RS RC
+        !  !    !  !  !
+        ",
+        );
+        let source = Position::new(1, 0);
+        let action = Action::Slide(source, Direction::East, Some(vec![4, 3, 2, 1]));
+        let (ml, oc) = apply(start, 5, action, Red);
+        let was = ml.peek();
+        assert_eq!(was, &expected);
+        assert!(oc.is_some());
+        let oc = oc.unwrap();
+        assert_eq!(oc.board, expected);
+        assert_eq!(oc.result, MatchResult::Winner(Color::Red));
     }
 }
